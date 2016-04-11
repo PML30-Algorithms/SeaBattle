@@ -6,7 +6,6 @@ import std.math;
 import std.random;
 
 
-
 import std.datetime;
 import std.concurrency;
 import std.range;
