@@ -3,6 +3,7 @@ module main;
 import std.stdio;
 import std.algorithm;
 import std.math;
+import std.random;
 
 
 
@@ -23,10 +24,12 @@ import allegro5.allegro_primitives;
 import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
-alias Board = char [ROWS] [COLS];
-alias Move = Tuple !(long, "value", int, "row", int, "col");
 
-
+struct Board
+{
+  char [ROWS][COLS] hits;
+  char [ROWS][COLS] ships;
+}
 immutable int BOARD_X = 50;
 immutable int BOARD_Y = 50;
 
@@ -78,10 +81,21 @@ void initBoard (ref Board board)
 	{
 		for (int col = 0; col < COLS; col++)
 		{
-			board[row][col] = '.';
+			board.hits[row][col] = '.';
 		}
 	}
+	for (int row = 0; row < ROWS; row++)
+	{
+		for (int col = 0; col < COLS; col++)
+		{
+			board.ships[row][col] = '.';
+		}
+	}
+	int row, col;
+	row = uniform(0,ROWS);
+	col = uniform(0,COLS);
 
+   board.ships[row][col] = 'O';
 }
 
 
@@ -90,23 +104,24 @@ void draw (const ref Board board)
 	al_clear_to_color (al_map_rgb_f (128,128,128));
 	for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
-            drawCell (board,row, col, board[row][col]);
+            drawCell (board,row, col, board.hits[row][col], board.ships[row][col]);
 	al_flip_display ();
 }
 
-void drawCell (const ref Board board,int row, int col, char cell)
+void drawCell (const ref Board board,int row, int col, char hits, char ships)
 {
     int curx = BOARD_X + col * CELL_X;
     int cury = BOARD_Y + row * CELL_Y;
 
     al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),2.5);
-    if (cell == 'X')
+    if (ships == 'O' && hits == 'X')
+        al_draw_circle(curx +25, cury +25, 17.5, al_map_rgb_f(0,153,0),5);
+    if (hits == 'X')
     {
         al_draw_line(curx+10,cury + 10, curx + 40, cury +40, al_map_rgb_f(0,0,153),5);
         al_draw_line(curx+10,cury + 40, curx + 40, cury +10, al_map_rgb_f(0,0,153),5);
     }
-    else if (cell == 'O')
-        al_draw_circle(curx +25, cury +25, 17.5, al_map_rgb_f(0,153,0),5);
+
 }
 
 bool is_finished;
@@ -176,6 +191,9 @@ void main_loop ()
 
         switch (current_event.type)
         {
+             case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
+                draw (board);
+                break;
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
                 happy_end ();
                 break;
@@ -223,9 +241,9 @@ bool moveMouse (ref Board board, char player, int x, int y)
         return false;
     int row = (y - BOARD_Y) / CELL_Y;
     int col = (x - BOARD_X) / CELL_X;
-    if (board[row][col] != '.')
+    if (board.hits[row][col] != '.')
         return false;
-    board [row][col] = player;
+    board.hits[row][col] = player;
 
     if (wins (board, player))
     {
@@ -241,8 +259,16 @@ bool moveMouse (ref Board board, char player, int x, int y)
 
 bool wins (Board board, char player)
 {
+  for (int row = 0; row < ROWS; row++)
+	{
+		for (int col = 0; col < COLS; col++)
+		{
+			if (board.ships[row][col] == 'O' && board.hits[row][col] == '.')
+                return false;
+		}
+	}
 
-    if (board[4][7] == 'X')
-                return true;
-    return false;
+
+    return true;
+
 }
