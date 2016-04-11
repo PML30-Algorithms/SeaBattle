@@ -6,6 +6,7 @@ import std.math;
 import std.random;
 
 
+
 import std.datetime;
 import std.concurrency;
 import std.range;
@@ -257,6 +258,22 @@ bool moveMouse (ref Board board, char player, int x, int y)
 
 
 
+bool MarkShot( ref Board board, char player, int x, int y )
+{
+    if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
+        return false;
+    if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
+        return false;
+    int row = (y - BOARD_Y) / CELL_Y;
+    int col = (x - BOARD_X) / CELL_X;
+    if (board.hits[row][col] != '.')
+        return false;
+    board.hits[row][col] = 'Y';
+
+    return true;
+}
+
+
 bool wins (Board board, char player)
 {
   for (int row = 0; row < ROWS; row++)
@@ -270,5 +287,4 @@ bool wins (Board board, char player)
 
 
     return true;
-
 }
