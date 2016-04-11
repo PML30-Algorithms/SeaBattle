@@ -9,8 +9,7 @@ import std.random;
 
 import std.datetime;
 import std.concurrency;
-import std.range;
-import std.typecons;
+import std.range;import std.typecons;
 import core.stdc.stdlib;
 import std.exception;
 import std.stdio;
@@ -75,7 +74,6 @@ void init ()
 }
 
 
-
 void initBoard (ref Board board)
 {
 	for (int row = 0; row < ROWS; row++)
@@ -92,11 +90,7 @@ void initBoard (ref Board board)
 			board.ships[row][col] = '.';
 		}
 	}
-	int row, col;
-	row = uniform(0,ROWS);
-	col = uniform(0,COLS);
 
-   board.ships[row][col] = 'O';
 }
 
 
@@ -127,7 +121,7 @@ void drawCell (const ref Board board,int row, int col, char hits, char ships)
 
 bool is_finished;
 
-void moveHuman (ref Board board, char player)
+void moveHuman (alias moveMouse) (ref Board board, char player)
 {
     bool local_finished = false;
     while (!local_finished)
@@ -162,8 +156,9 @@ void moveHuman (ref Board board, char player)
 
 void moveX (ref Board board)
 {
-    moveHuman (board, 'X');
+    moveHuman !(moveMouse) (board, 'X');
 }
+
 
 
 
@@ -173,7 +168,8 @@ void main_loop ()
     Board board;
     initBoard (board);
     is_finished = false;
-
+    draw (board);
+    moveHuman !(moveMousePrepare) (board, 'O');
 
 
 
@@ -256,6 +252,20 @@ bool moveMouse (ref Board board, char player, int x, int y)
     return true;
 }
 
+bool moveMousePrepare (ref Board board, char player, int x, int y)
+{
+    if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
+        return false;
+    if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
+        return false;
+    int row = (y - BOARD_Y) / CELL_Y;
+    int col = (x - BOARD_X) / CELL_X;
+    if (board.ships[row][col] != '.')
+        return false;
+    board.ships[row][col] = player;
+    return true;
+
+}
 
 
 bool MarkShot( ref Board board, char player, int x, int y )
