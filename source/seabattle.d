@@ -9,7 +9,8 @@ import std.random;
 
 import std.datetime;
 import std.concurrency;
-import std.range;import std.typecons;
+import std.range;
+import std.typecons;
 import core.stdc.stdlib;
 import std.exception;
 import std.stdio;
