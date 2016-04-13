@@ -5,7 +5,7 @@ import std.algorithm;
 import std.math;
 import std.random;
 
-
+immutable MaxShots = 4;
 
 import std.datetime;
 import std.concurrency;
@@ -128,6 +128,7 @@ void drawCell (const ref Board board,int row, int col, char hits, char ships)
 
 bool is_finished;
 
+
 void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 {
     bool local_finished = false;
@@ -176,8 +177,8 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 }
 
 void moveX (ref Board board)
-{
-    moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
+{      
+  moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
 void main_loop ()
@@ -195,7 +196,7 @@ void main_loop ()
     {
         draw (board);
         moveX (board);
-        draw (board);
+        draw(board);
         if (wins (board))
         {
             writeln ("Player wins");
@@ -255,6 +256,7 @@ int main (string [] args)
 
 
 
+
 bool moveMouseBattle (ref Board board, int x, int y)
 {
     if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
@@ -264,17 +266,29 @@ bool moveMouseBattle (ref Board board, int x, int y)
     int row = (y - BOARD_Y) / CELL_Y;
     int col = (x - BOARD_X) / CELL_X;
 
-    if (board.hits[row][col] == 'Y') board.hits[row][col] = '.';
+    if (board.hits[row][col] == 'Y')   board.hits[row][col] = '.';
     else
-        if (board.hits[row][col] == '.')  board.hits[row][col] = 'Y';
+        if (board.hits[row][col] == '.')   board.hits[row][col] = 'Y';
+
 
     return false;
 }
 
 bool moveKeyboardBattle (ref Board board, int keycode)
 {
+    int cnt = 0;
     if (keycode == ALLEGRO_KEY_ENTER)
     {
+        foreach (row; 0..ROWS)
+            foreach (col; 0..COLS)
+            if (board.hits[row][col] == 'Y')
+                cnt ++;
+
+
+        if (cnt > MaxShots)
+            return false;
+
+
         foreach (row; 0..ROWS)
             foreach (col; 0..COLS)
                 if (board.hits[row][col] == 'Y')
@@ -284,7 +298,7 @@ bool moveKeyboardBattle (ref Board board, int keycode)
     return false;
 }
 
-bool moveMousePrepare (ref Board board, int x, int y)
+bool moveMousePrepare (ref Board board,  int x, int y)
 {
     if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
         return false;
@@ -299,7 +313,7 @@ bool moveMousePrepare (ref Board board, int x, int y)
 
 }
 
-bool moveKeyboardPrepare (ref Board board, int keycode)
+bool moveKeyboardPrepare (ref Board board,  int keycode)
 {
     return false;
 }
@@ -309,7 +323,7 @@ bool moveKeyboardPrepare (ref Board board, int keycode)
 
 bool wins (Board board)
 {
-    for (int row = 0; row < ROWS; row++)
+  for (int row = 0; row < ROWS; row++)
     {
         for (int col = 0; col < COLS; col++)
         {
@@ -317,6 +331,7 @@ bool wins (Board board)
                 return false;
         }
     }
+
 
     return true;
 }
