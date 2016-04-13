@@ -30,7 +30,9 @@ struct Board
 {
   char [ROWS][COLS] hits;
   char [ROWS][COLS] ships;
+  bool drawAllShips;
 }
+
 immutable int BOARD_X = 50;
 immutable int BOARD_Y = 50;
 
@@ -45,6 +47,8 @@ immutable int DIRS = 4;
 
 immutable int [DIRS] Drow=[0,+1,+1,+1];
 immutable int [DIRS] Dcol=[+1,+1,0,-1];
+
+immutable int SHIPS = 4;
 
 
 immutable int MAX_X = 1000;
@@ -93,7 +97,7 @@ void initBoard (ref Board board)
             board.ships[row][col] = '.';
         }
     }
-
+    board.drawAllShips = false;
 }
 
 
@@ -102,17 +106,19 @@ void draw (const ref Board board)
     al_clear_to_color (al_map_rgb_f (128,128,128));
     for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
-            drawCell (board,row, col, board.hits[row][col], board.ships[row][col]);
+            drawCell (board, row, col, board.hits[row][col], board.ships[row][col]);
     al_flip_display ();
 }
 
-void drawCell (const ref Board board,int row, int col, char hits, char ships)
+
+
+void drawCell (const ref Board board, int row, int col, char hits, char ships)
 {
     int curx = BOARD_X + col * CELL_X;
     int cury = BOARD_Y + row * CELL_Y;
 
     al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),2.5);
-    if (ships == 'O' && hits == 'X')
+    if (ships == 'O' && (hits == 'X' || board.drawAllShips))
         al_draw_circle(curx +25, cury +25, 17.5, al_map_rgb_f(0,153,0),5);
     if (hits == 'X')
     {
@@ -134,7 +140,7 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
     bool local_finished = false;
     while (!local_finished)
     {
-        draw(board);
+        draw (board);
 
         ALLEGRO_EVENT current_event;
         al_wait_for_event (event_queue, &current_event);
@@ -187,10 +193,11 @@ void main_loop ()
     Board board;
     initBoard (board);
     is_finished = false;
+
+    board.drawAllShips = true;
     draw (board);
     moveHuman !(moveMousePrepare, moveKeyboardPrepare) (board);
-
-
+    board.drawAllShips = false;
 
     while (true)
     {
@@ -306,15 +313,35 @@ bool moveMousePrepare (ref Board board,  int x, int y)
         return false;
     int row = (y - BOARD_Y) / CELL_Y;
     int col = (x - BOARD_X) / CELL_X;
-    if (board.ships[row][col] != '.')
-        return false;
-    board.ships[row][col] = 'O';
-    return true;
 
+    if (board.ships[row][col] == 'O') board.ships[row][col] = '.';
+    else
+      if (board.ships[row][col] == '.')  board.ships[row][col] = 'O';
+
+    return false;
 }
 
 bool moveKeyboardPrepare (ref Board board,  int keycode)
 {
+    int count = 0;
+    for (int row = 0; row < ROWS; row++)
+    {
+        for (int col = 0; col < COLS; col++)
+            if (board.ships[row][col] == 'O')
+              count++;
+    }
+    if (keycode == ALLEGRO_KEY_ENTER)
+    {
+        if (count == SHIPS)
+        {
+          return true;
+        }
+        else
+
+
+
+           writeln("Wrong number of ships");
+    }
     return false;
 }
 
