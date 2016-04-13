@@ -36,8 +36,8 @@ struct Board
 immutable int BOARD_X = 50;
 immutable int BOARD_Y = 50;
 
-immutable int CELL_X = 50;
-immutable int CELL_Y = 50;
+immutable int CELL_X = 40;
+immutable int CELL_Y = 40;
 
 immutable int ROWS = 10;
 immutable int COLS = 10;
@@ -117,18 +117,19 @@ void drawCell (const ref Board board, int row, int col, char hits, char ships)
     int curx = BOARD_X + col * CELL_X;
     int cury = BOARD_Y + row * CELL_Y;
 
-    al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),2.5);
+    double CELL_SCALE = min (CELL_X, CELL_Y);
+    al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),0.05* CELL_SCALE);
     if (ships == 'O' && (hits == 'X' || board.drawAllShips))
-        al_draw_circle(curx +25, cury +25, 17.5, al_map_rgb_f(0,153,0),5);
+        al_draw_circle(curx + 0.5*CELL_X, cury + 0.5*CELL_Y, 0.375* CELL_SCALE, al_map_rgb_f(0,153,0),0.1* CELL_SCALE);
     if (hits == 'X')
     {
-        al_draw_line(curx+10,cury + 10, curx + 40, cury +40, al_map_rgb_f(0,0,153),5);
-        al_draw_line(curx+10,cury + 40, curx + 40, cury +10, al_map_rgb_f(0,0,153),5);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
     }
     if (hits == 'Y')
     {
-        al_draw_line(curx+10,cury + 10, curx + 40, cury +40, al_map_rgb_f(153,0,0),5);
-        al_draw_line(curx+10,cury + 40, curx + 40, cury +10, al_map_rgb_f(153,0,0),5);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
     }
 }
 
@@ -183,7 +184,7 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 }
 
 void moveX (ref Board board)
-{      
+{
   moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
@@ -294,6 +295,12 @@ bool moveKeyboardBattle (ref Board board, int keycode)
 
         if (cnt > MaxShots)
             return false;
+
+        if (cnt < 1)
+        {
+          writeln("MORE SHIPS");
+          return false;
+        }
 
 
         foreach (row; 0..ROWS)
