@@ -177,12 +177,8 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 }
 
 void moveX (ref Board board)
-{
-    int i = 0;
-    while (i < MaxShots)
-    {
-         moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
-    }
+{      
+  moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
 void main_loop ()
