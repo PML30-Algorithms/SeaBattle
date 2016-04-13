@@ -25,6 +25,36 @@ import allegro5.allegro_primitives;
 import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
+class Button
+{
+    int x,y,width,height;
+    ALLEGRO_COLOR backgroundColor;
+    ALLEGRO_COLOR nameColor;
+    string name;
+
+    this (int x_, int y_, int width_, int height_,
+          ALLEGRO_COLOR backgroundColor_, ALLEGRO_COLOR nameColor_, string name_)
+    {
+        x = x_;
+        y = y_;
+        width = width_;
+        height = height_;
+        backgroundColor = backgroundColor_;
+        nameColor = nameColor_;
+        name = name_;
+    }
+
+    void draw ()
+    {
+
+        al_draw_filled_rectangle(x,y,x+width,y+height, backgroundColor);
+        al_draw_text (global_font, nameColor, x + width * 0.5, y + (height - FONT_HEIGHT) * 0.5,
+                      ALLEGRO_ALIGN_CENTRE, name.toStringz);
+
+    }
+}
+
+Button finishButton;
 
 struct Board
 {
@@ -36,8 +66,8 @@ struct Board
 immutable int BOARD_X = 50;
 immutable int BOARD_Y = 50;
 
-immutable int CELL_X = 50;
-immutable int CELL_Y = 50;
+immutable int CELL_X = 40;
+immutable int CELL_Y = 40;
 
 immutable int ROWS = 10;
 immutable int COLS = 10;
@@ -53,6 +83,8 @@ immutable int SHIPS = 4;
 
 immutable int MAX_X = 1000;
 immutable int MAX_Y = 1000;
+
+immutable int FONT_HEIGHT = 24;
 
 ALLEGRO_DISPLAY * display;
 ALLEGRO_EVENT_QUEUE * event_queue;
@@ -73,7 +105,7 @@ void init ()
     event_queue = al_create_event_queue ();
     enforce (event_queue);
 
-    global_font = al_load_ttf_font ("CONSOLA.TTF", 24, 0);
+    global_font = al_load_ttf_font ("Inconsolata-Regular.ttf", FONT_HEIGHT, 0);
 
     al_register_event_source (event_queue, al_get_mouse_event_source ());
     al_register_event_source (event_queue, al_get_keyboard_event_source ());
@@ -107,7 +139,9 @@ void draw (const ref Board board)
     for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
             drawCell (board, row, col, board.hits[row][col], board.ships[row][col]);
+    finishButton.draw ();
     al_flip_display ();
+
 }
 
 
@@ -117,18 +151,19 @@ void drawCell (const ref Board board, int row, int col, char hits, char ships)
     int curx = BOARD_X + col * CELL_X;
     int cury = BOARD_Y + row * CELL_Y;
 
-    al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),2.5);
+    double CELL_SCALE = min (CELL_X, CELL_Y);
+    al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),0.05* CELL_SCALE);
     if (ships == 'O' && (hits == 'X' || board.drawAllShips))
-        al_draw_circle(curx +25, cury +25, 17.5, al_map_rgb_f(0,153,0),5);
+        al_draw_circle(curx + 0.5*CELL_X, cury + 0.5*CELL_Y, 0.375* CELL_SCALE, al_map_rgb_f(0,153,0),0.1* CELL_SCALE);
     if (hits == 'X')
     {
-        al_draw_line(curx+10,cury + 10, curx + 40, cury +40, al_map_rgb_f(0,0,153),5);
-        al_draw_line(curx+10,cury + 40, curx + 40, cury +10, al_map_rgb_f(0,0,153),5);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
     }
     if (hits == 'Y')
     {
-        al_draw_line(curx+10,cury + 10, curx + 40, cury +40, al_map_rgb_f(153,0,0),5);
-        al_draw_line(curx+10,cury + 40, curx + 40, cury +10, al_map_rgb_f(153,0,0),5);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
+        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
     }
 }
 
@@ -183,12 +218,14 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 }
 
 void moveX (ref Board board)
-{      
+{
   moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
 void main_loop ()
 {
+    finishButton = new Button (600, 200, 100, 30,
+                               al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "FINISH");
 
     Board board;
     initBoard (board);
@@ -294,6 +331,12 @@ bool moveKeyboardBattle (ref Board board, int keycode)
 
         if (cnt > MaxShots)
             return false;
+
+        if (cnt < 1)
+        {
+          writeln("MORE SHIPS");
+          return false;
+        }
 
 
         foreach (row; 0..ROWS)
