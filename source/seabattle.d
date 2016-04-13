@@ -25,6 +25,36 @@ import allegro5.allegro_primitives;
 import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
+class Button
+{
+    int x,y,width,height;
+    ALLEGRO_COLOR backgroundColor;
+    ALLEGRO_COLOR nameColor;
+    string name;
+
+    this (int x_, int y_, int width_, int height_,
+          ALLEGRO_COLOR backgroundColor_, ALLEGRO_COLOR nameColor_, string name_)
+    {
+        x = x_;
+        y = y_;
+        width = width_;
+        height = height_;
+        backgroundColor = backgroundColor_;
+        nameColor = nameColor_;
+        name = name_;
+    }
+
+    void draw ()
+    {
+
+        al_draw_filled_rectangle(x,y,x+width,y+height, backgroundColor);
+        al_draw_text (global_font, nameColor, x + width * 0.5, y + (height - FONT_HEIGHT) * 0.5,
+                      ALLEGRO_ALIGN_CENTRE, name.toStringz);
+
+    }
+}
+
+Button finishButton;
 
 struct Board
 {
@@ -54,6 +84,8 @@ immutable int SHIPS = 4;
 immutable int MAX_X = 1000;
 immutable int MAX_Y = 1000;
 
+immutable int FONT_HEIGHT = 24;
+
 ALLEGRO_DISPLAY * display;
 ALLEGRO_EVENT_QUEUE * event_queue;
 ALLEGRO_FONT * global_font;
@@ -73,7 +105,7 @@ void init ()
     event_queue = al_create_event_queue ();
     enforce (event_queue);
 
-    global_font = al_load_ttf_font ("CONSOLA.TTF", 24, 0);
+    global_font = al_load_ttf_font ("Inconsolata-Regular.ttf", FONT_HEIGHT, 0);
 
     al_register_event_source (event_queue, al_get_mouse_event_source ());
     al_register_event_source (event_queue, al_get_keyboard_event_source ());
@@ -107,7 +139,9 @@ void draw (const ref Board board)
     for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
             drawCell (board, row, col, board.hits[row][col], board.ships[row][col]);
+    finishButton.draw ();
     al_flip_display ();
+
 }
 
 
@@ -190,6 +224,8 @@ void moveX (ref Board board)
 
 void main_loop ()
 {
+    finishButton = new Button (600, 200, 100, 30,
+                               al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "FINISH");
 
     Board board;
     initBoard (board);
