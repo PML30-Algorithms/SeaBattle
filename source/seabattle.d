@@ -183,15 +183,11 @@ void moveX (ref Board board)
 
 void main_loop ()
 {
-
     Board board;
     initBoard (board);
     is_finished = false;
     draw (board);
     moveHuman !(moveMousePrepare, moveKeyboardPrepare) (board);
-
-
-
     while (true)
     {
         draw (board);
@@ -205,7 +201,6 @@ void main_loop ()
         if (is_finished) break;
     }
     draw (board);
-
     while (true)
     {
         ALLEGRO_EVENT current_event;
@@ -244,7 +239,6 @@ void happy_end ()
 
 int main (string [] args)
 {
-
     return al_run_allegro (
     {
         init ();
@@ -269,8 +263,6 @@ bool moveMouseBattle (ref Board board, int x, int y)
     if (board.hits[row][col] == 'Y')   board.hits[row][col] = '.';
     else
         if (board.hits[row][col] == '.')   board.hits[row][col] = 'Y';
-
-
     return false;
 }
 
@@ -283,12 +275,8 @@ bool moveKeyboardBattle (ref Board board, int keycode)
             foreach (col; 0..COLS)
             if (board.hits[row][col] == 'Y')
                 cnt ++;
-
-
         if (cnt > MaxShots)
             return false;
-
-
         foreach (row; 0..ROWS)
             foreach (col; 0..COLS)
                 if (board.hits[row][col] == 'Y')
@@ -318,9 +306,6 @@ bool moveKeyboardPrepare (ref Board board,  int keycode)
     return false;
 }
 
-
-
-
 bool wins (Board board)
 {
   for (int row = 0; row < ROWS; row++)
@@ -331,7 +316,5 @@ bool wins (Board board)
                 return false;
         }
     }
-
-
     return true;
 }
