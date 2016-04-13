@@ -56,54 +56,54 @@ ALLEGRO_FONT * global_font;
 
 void init ()
 {
-	enforce (al_init ());
-	enforce (al_init_primitives_addon ());
-	enforce (al_install_mouse ());
-	enforce (al_install_keyboard ());
-	al_init_font_addon ();
-	enforce (al_init_ttf_addon ());
+    enforce (al_init ());
+    enforce (al_init_primitives_addon ());
+    enforce (al_install_mouse ());
+    enforce (al_install_keyboard ());
+    al_init_font_addon ();
+    enforce (al_init_ttf_addon ());
 
-	display = al_create_display (MAX_X, MAX_Y);
-	enforce (display);
+    display = al_create_display (MAX_X, MAX_Y);
+    enforce (display);
 
-	event_queue = al_create_event_queue ();
-	enforce (event_queue);
+    event_queue = al_create_event_queue ();
+    enforce (event_queue);
 
-	global_font = al_load_ttf_font ("CONSOLA.TTF", 24, 0);
+    global_font = al_load_ttf_font ("CONSOLA.TTF", 24, 0);
 
-	al_register_event_source (event_queue, al_get_mouse_event_source ());
-	al_register_event_source (event_queue, al_get_keyboard_event_source ());
-	al_register_event_source (event_queue, al_get_display_event_source (display));
+    al_register_event_source (event_queue, al_get_mouse_event_source ());
+    al_register_event_source (event_queue, al_get_keyboard_event_source ());
+    al_register_event_source (event_queue, al_get_display_event_source (display));
 }
 
 
 void initBoard (ref Board board)
 {
-	for (int row = 0; row < ROWS; row++)
-	{
-		for (int col = 0; col < COLS; col++)
-		{
-			board.hits[row][col] = '.';
-		}
-	}
-	for (int row = 0; row < ROWS; row++)
-	{
-		for (int col = 0; col < COLS; col++)
-		{
-			board.ships[row][col] = '.';
-		}
-	}
+    for (int row = 0; row < ROWS; row++)
+    {
+        for (int col = 0; col < COLS; col++)
+        {
+            board.hits[row][col] = '.';
+        }
+    }
+    for (int row = 0; row < ROWS; row++)
+    {
+        for (int col = 0; col < COLS; col++)
+        {
+            board.ships[row][col] = '.';
+        }
+    }
 
 }
 
 
 void draw (const ref Board board)
 {
-	al_clear_to_color (al_map_rgb_f (128,128,128));
-	for (int row = 0; row < ROWS; row++)
+    al_clear_to_color (al_map_rgb_f (128,128,128));
+    for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
             drawCell (board,row, col, board.hits[row][col], board.ships[row][col]);
-	al_flip_display ();
+    al_flip_display ();
 }
 
 void drawCell (const ref Board board,int row, int col, char hits, char ships)
@@ -196,18 +196,18 @@ void main_loop ()
 
 
 
-	while (true)
-	{
-	    draw (board);
-	    moveX (board);
-	    draw(board);
-	    if (wins (board))
+    while (true)
+    {
+        draw (board);
+        moveX (board);
+        draw(board);
+        if (wins (board))
         {
             writeln ("Player wins");
             is_finished = true;
         }
-	    if (is_finished) break;
-	}
+        if (is_finished) break;
+    }
     draw (board);
 
     while (true)
@@ -233,15 +233,15 @@ void main_loop ()
 
 void happy_end ()
 {
-	al_destroy_display (display);
-	al_destroy_event_queue (event_queue);
-	al_destroy_font (global_font);
+    al_destroy_display (display);
+    al_destroy_event_queue (event_queue);
+    al_destroy_font (global_font);
 
-	al_shutdown_ttf_addon ();
-	al_shutdown_font_addon ();
-	al_shutdown_primitives_addon ();
+    al_shutdown_ttf_addon ();
+    al_shutdown_font_addon ();
+    al_shutdown_primitives_addon ();
 
-	exit (EXIT_SUCCESS);
+    exit (EXIT_SUCCESS);
 }
 
 
@@ -249,13 +249,13 @@ void happy_end ()
 int main (string [] args)
 {
 
-	return al_run_allegro (
-	{
-		init ();
-		main_loop ();
-		happy_end ();
-		return 0;
-	});
+    return al_run_allegro (
+    {
+        init ();
+        main_loop ();
+        happy_end ();
+        return 0;
+    });
 }
 
 
@@ -328,13 +328,13 @@ bool moveKeyboardPrepare (ref Board board,  int keycode)
 bool wins (Board board)
 {
   for (int row = 0; row < ROWS; row++)
-	{
-		for (int col = 0; col < COLS; col++)
-		{
-			if (board.ships[row][col] == 'O' && board.hits[row][col] == '.')
+    {
+        for (int col = 0; col < COLS; col++)
+        {
+            if (board.ships[row][col] == 'O' && board.hits[row][col] == '.')
                 return false;
-		}
-	}
+        }
+    }
 
 
     return true;
