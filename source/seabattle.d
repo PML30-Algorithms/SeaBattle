@@ -48,8 +48,8 @@ immutable int DIRS = 4;
 immutable int [DIRS] Drow=[0,+1,+1,+1];
 immutable int [DIRS] Dcol=[+1,+1,0,-1];
 
-immutable int SHIPS = 4;
-
+immutable int MAX_LEN = 4;
+immutable int NUM_SHIPS [MAX_LEN + 1] = [0, 4, 3, 2, 1];
 
 immutable int MAX_X = 1000;
 immutable int MAX_Y = 1000;
@@ -183,7 +183,7 @@ void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
 }
 
 void moveX (ref Board board)
-{      
+{
   moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
@@ -321,26 +321,66 @@ bool moveMousePrepare (ref Board board,  int x, int y)
     return false;
 }
 
+
 bool moveKeyboardPrepare (ref Board board,  int keycode)
 {
-    int count = 0;
-    for (int row = 0; row < ROWS; row++)
-    {
-        for (int col = 0; col < COLS; col++)
-            if (board.ships[row][col] == 'O')
-              count++;
-    }
     if (keycode == ALLEGRO_KEY_ENTER)
     {
-        if (count == SHIPS)
+        for (int row = 0; row < ROWS - 1; row++)
+            for (int col= 0; col < COLS - 1; col++)
+                if ((board.ships[row][col] == 'O') + (board.ships[row + 1][col] == 'O') +
+                    (board.ships[row][col + 1] == 'O') + (board.ships[row + 1][col + 1] == 'O') >= 3)
+                  {
+                      writeln("Your ships touch each other");
+                      return false;
+                  }
+        bool [ROWS] [COLS] b;
+        foreach (row; 0..ROWS)
+            foreach (col; 0..COLS)
+                b[row][col] = (board.ships[row][col] == 'O');
+
+        int actual_ships [MAX_LEN + 1];
+        for (int row = 0; row < ROWS; row++)
         {
-          return true;
+            for (int col = 0; col < COLS; col++)
+                if (b[row][col])
+                {
+                    b[row][col] = false;
+                    int count1 = 1, count2 = 1;
+                    for (int z = row + 1; z < ROWS; z++)
+                        if(b[z][col])
+                        {
+                            count1++;
+                            b[z][col] = false;
+                        }
+                        else break;
+                    for (int y = col + 1; y < COLS; y++)
+                        if(b[row][y])
+                        {
+                            count2++;
+                            b[row][y] = false;
+                        }
+
+                        else break;
+                    if (count1 == 1)
+                        count1 = count2;
+                    if (count1 <= 4)
+                         actual_ships[count1]++;
+                    else {writeln ("Big ship"); return false;}
+                }
         }
-        else
 
 
-
-           writeln("Wrong number of ships");
+        foreach (len; 0..MAX_LEN + 1)
+        {
+            if (actual_ships[len] != NUM_SHIPS[len])
+            {
+                writeln("Number of ships of length ", len, " is ",
+                        actual_ships[len], " instead of ", NUM_SHIPS[len]);
+                return false;
+            }
+        }
+        return true;
     }
     return false;
 }
