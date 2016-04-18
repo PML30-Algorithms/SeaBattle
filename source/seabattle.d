@@ -44,6 +44,12 @@ class Button
         name = name_;
     }
 
+    bool inside (int px, int py)
+    {
+        return (x<=px && px<=x+width && y<=py && py<=y+height);
+
+    }
+
     void draw ()
     {
 
@@ -303,6 +309,11 @@ int main (string [] args)
 
 bool moveMouseBattle (ref Board board, int x, int y)
 {
+    if (finishButton.inside (x, y))
+    {
+        return finishBattleMove (board);
+    }
+
     if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
         return false;
     if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
@@ -318,38 +329,49 @@ bool moveMouseBattle (ref Board board, int x, int y)
     return false;
 }
 
-bool moveKeyboardBattle (ref Board board, int keycode)
+bool finishBattleMove (ref Board board)
 {
     int cnt = 0;
+    foreach (row; 0..ROWS)
+        foreach (col; 0..COLS)
+        if (board.hits[row][col] == 'Y')
+            cnt ++;
+
+    if (cnt > MaxShots)
+    {
+        writeln("LESS SHIPS");
+        return false;
+    }
+
+    if (cnt < 1)
+    {
+        writeln("MORE SHIPS");
+        return false;
+    }
+
+    foreach (row; 0..ROWS)
+        foreach (col; 0..COLS)
+            if (board.hits[row][col] == 'Y')
+                board.hits[row][col] = 'X';
+    return true;
+}
+
+bool moveKeyboardBattle (ref Board board, int keycode)
+{
     if (keycode == ALLEGRO_KEY_ENTER)
     {
-        foreach (row; 0..ROWS)
-            foreach (col; 0..COLS)
-            if (board.hits[row][col] == 'Y')
-                cnt ++;
-
-
-        if (cnt > MaxShots)
-            return false;
-
-        if (cnt < 1)
-        {
-          writeln("MORE SHIPS");
-          return false;
-        }
-
-
-        foreach (row; 0..ROWS)
-            foreach (col; 0..COLS)
-                if (board.hits[row][col] == 'Y')
-                    board.hits[row][col] = 'X';
-        return true;
+        return finishBattleMove (board);
     }
     return false;
 }
 
 bool moveMousePrepare (ref Board board,  int x, int y)
 {
+    if (finishButton.inside (x, y))
+    {
+        return finishPrepareMove (board);
+    }
+
     if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
         return false;
     if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
@@ -364,66 +386,69 @@ bool moveMousePrepare (ref Board board,  int x, int y)
     return false;
 }
 
+bool finishPrepareMove (ref Board board)
+{
+    for (int row = 0; row < ROWS - 1; row++)
+        for (int col= 0; col < COLS - 1; col++)
+            if ((board.ships[row][col] == 'O') + (board.ships[row + 1][col] == 'O') +
+                (board.ships[row][col + 1] == 'O') + (board.ships[row + 1][col + 1] == 'O') >= 3)
+              {
+                  writeln("Your ships touch each other");
+                  return false;
+              }
+    bool [ROWS] [COLS] b;
+    foreach (row; 0..ROWS)
+        foreach (col; 0..COLS)
+            b[row][col] = (board.ships[row][col] == 'O');
 
-bool moveKeyboardPrepare (ref Board board,  int keycode)
+    int actual_ships [MAX_LEN + 1];
+    for (int row = 0; row < ROWS; row++)
+    {
+        for (int col = 0; col < COLS; col++)
+            if (b[row][col])
+            {
+                b[row][col] = false;
+                int count1 = 1, count2 = 1;
+                for (int z = row + 1; z < ROWS; z++)
+                    if(b[z][col])
+                    {
+                        count1++;
+                        b[z][col] = false;
+                    }
+                    else break;
+                for (int y = col + 1; y < COLS; y++)
+                    if(b[row][y])
+                    {
+                        count2++;
+                        b[row][y] = false;
+                    }
+
+                    else break;
+                if (count1 == 1)
+                    count1 = count2;
+                if (count1 <= 4)
+                     actual_ships[count1]++;
+                else {writeln ("Big ship"); return false;}
+            }
+    }
+
+    foreach (len; 0..MAX_LEN + 1)
+    {
+        if (actual_ships[len] != NUM_SHIPS[len])
+        {
+            writeln("Number of ships of length ", len, " is ",
+                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool moveKeyboardPrepare (ref Board board, int keycode)
 {
     if (keycode == ALLEGRO_KEY_ENTER)
     {
-        for (int row = 0; row < ROWS - 1; row++)
-            for (int col= 0; col < COLS - 1; col++)
-                if ((board.ships[row][col] == 'O') + (board.ships[row + 1][col] == 'O') +
-                    (board.ships[row][col + 1] == 'O') + (board.ships[row + 1][col + 1] == 'O') >= 3)
-                  {
-                      writeln("Your ships touch each other");
-                      return false;
-                  }
-        bool [ROWS] [COLS] b;
-        foreach (row; 0..ROWS)
-            foreach (col; 0..COLS)
-                b[row][col] = (board.ships[row][col] == 'O');
-
-        int actual_ships [MAX_LEN + 1];
-        for (int row = 0; row < ROWS; row++)
-        {
-            for (int col = 0; col < COLS; col++)
-                if (b[row][col])
-                {
-                    b[row][col] = false;
-                    int count1 = 1, count2 = 1;
-                    for (int z = row + 1; z < ROWS; z++)
-                        if(b[z][col])
-                        {
-                            count1++;
-                            b[z][col] = false;
-                        }
-                        else break;
-                    for (int y = col + 1; y < COLS; y++)
-                        if(b[row][y])
-                        {
-                            count2++;
-                            b[row][y] = false;
-                        }
-
-                        else break;
-                    if (count1 == 1)
-                        count1 = count2;
-                    if (count1 <= 4)
-                         actual_ships[count1]++;
-                    else {writeln ("Big ship"); return false;}
-                }
-        }
-
-
-        foreach (len; 0..MAX_LEN + 1)
-        {
-            if (actual_ships[len] != NUM_SHIPS[len])
-            {
-                writeln("Number of ships of length ", len, " is ",
-                        actual_ships[len], " instead of ", NUM_SHIPS[len]);
-                return false;
-            }
-        }
-        return true;
+        return finishPrepareMove (board);
     }
     return false;
 }
