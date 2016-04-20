@@ -25,6 +25,277 @@ import allegro5.allegro_primitives;
 import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
+
+
+abstract class Player
+{
+    Board myBoard;
+    Board enemyBoard;
+
+    Board battleMove();
+    Board prepareMove();
+    void updateEnemyMove (Board newMyBoard);
+    void updateMyMove (Board newEnemyBoard);
+}
+
+class HumanPlayer : Player
+{
+    void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board, int boardX, int boardY)
+    {
+        bool local_finished = false;
+        while (!local_finished)
+        {
+            draw ();
+
+            ALLEGRO_EVENT current_event;
+            al_wait_for_event (event_queue, &current_event);
+
+            switch (current_event.type)
+            {
+                case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                    happy_end ();
+                    break;
+
+                case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
+                    draw ();
+                    break;
+
+                case ALLEGRO_EVENT_KEY_DOWN:
+
+                    int keycode = current_event.keyboard.keycode;
+
+                    if (moveKeyboard (board, keycode))
+                    {
+                        local_finished = true;
+                    }
+                    break;
+
+                case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+
+                    int x = current_event.mouse.x;
+                    int y = current_event.mouse.y;
+
+                    if (moveMouse (board, boardX, boardY, x, y))
+                    {
+                        local_finished = true;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    void draw ()
+    {
+        myBoard.drawAllShips = true;
+        enemyBoard.drawAllShips = false;
+
+        al_clear_to_color (al_map_rgb_f (128,128,128));
+        drawBoard (myBoard, MY_BOARD_X, MY_BOARD_Y);
+        drawBoard (enemyBoard, ENEMY_BOARD_X, ENEMY_BOARD_Y);
+        finishButton.draw ();
+        al_flip_display ();
+    }
+
+    override Board battleMove()
+    {
+        draw ();
+        moveHuman !(moveMouseBattle, moveKeyboardBattle) (enemyBoard, ENEMY_BOARD_X, ENEMY_BOARD_Y);
+        draw ();
+        return enemyBoard;
+    }
+
+    override Board prepareMove()
+    {
+        initBoard (myBoard);
+        initBoard (enemyBoard);
+
+        myBoard.ships[0][0] = 'O';
+        myBoard.ships[0][1] = 'O';
+        myBoard.ships[0][2] = 'O';
+        myBoard.ships[0][3] = 'O';
+
+        myBoard.ships[2][0] = 'O';
+        myBoard.ships[2][1] = 'O';
+        myBoard.ships[2][2] = 'O';
+
+        myBoard.ships[3][4] = 'O';
+        myBoard.ships[3][5] = 'O';
+        myBoard.ships[3][6] = 'O';
+
+        myBoard.ships[8][0] = 'O';
+        myBoard.ships[9][0] = 'O';
+
+        myBoard.ships[8][3] = 'O';
+        myBoard.ships[9][3] = 'O';
+
+        myBoard.ships[8][9] = 'O';
+        myBoard.ships[9][9] = 'O';
+
+        myBoard.ships[5][5] = 'O';
+
+        myBoard.ships[5][9] = 'O';
+
+        myBoard.ships[6][1] = 'O';
+
+        myBoard.ships[7][7] = 'O';
+
+        draw ();
+        moveHuman !(moveMousePrepare, moveKeyboardPrepare) (myBoard, MY_BOARD_X, MY_BOARD_Y);
+        draw ();
+        return myBoard;
+    }
+
+    override void updateEnemyMove (Board newMyBoard)
+    {
+        myBoard = newMyBoard;
+        draw ();
+    }
+
+    override void updateMyMove (Board newEnemyBoard)
+    {
+        enemyBoard = newEnemyBoard;
+        draw ();
+    }
+}
+
+class ComputerPlayer : Player
+{
+    int curRow;
+    int curCol;
+
+    override Board battleMove()
+    {
+        enemyBoard.hits[curRow][curCol] = 'Y';
+        curRow++;
+        if (curRow >= ROWS)
+        {
+            curRow = 0;
+            curCol++;
+        }
+
+        return enemyBoard;
+    }
+
+    override Board prepareMove()
+    {
+        initBoard (myBoard);
+        initBoard (enemyBoard);
+
+        myBoard.ships[0][0] = 'O';
+        myBoard.ships[0][1] = 'O';
+        myBoard.ships[0][2] = 'O';
+        myBoard.ships[0][3] = 'O';
+
+        myBoard.ships[2][0] = 'O';
+        myBoard.ships[2][1] = 'O';
+        myBoard.ships[2][2] = 'O';
+
+        myBoard.ships[3][4] = 'O';
+        myBoard.ships[3][5] = 'O';
+        myBoard.ships[3][6] = 'O';
+
+        myBoard.ships[8][0] = 'O';
+        myBoard.ships[9][0] = 'O';
+
+        myBoard.ships[8][3] = 'O';
+        myBoard.ships[9][3] = 'O';
+
+        myBoard.ships[8][9] = 'O';
+        myBoard.ships[9][9] = 'O';
+
+        myBoard.ships[5][5] = 'O';
+
+        myBoard.ships[5][9] = 'O';
+
+        myBoard.ships[6][1] = 'O';
+
+        myBoard.ships[7][7] = 'O';
+
+        curRow = 0;
+        curCol = 0;
+        return myBoard;
+    }
+
+    override void updateEnemyMove (Board newMyBoard)
+    {
+        myBoard = newMyBoard;
+    }
+
+    override void updateMyMove (Board newEnemyBoard)
+    {
+        enemyBoard = newEnemyBoard;
+    }
+}
+
+class Server
+{
+    bool gameOver (Board [2] board)
+    {
+        if (wins (board[1]))
+        {
+            writeln ("Human wins");
+            return true;
+        }
+        if (wins (board[0]))
+        {
+            writeln ("Computer wins");
+            return true;
+        }
+        return false;
+    }
+
+    bool processBattleMove (ref Board board, const ref Board newBoard)
+    {
+        if (finishBattleMove (newBoard))
+        {
+            foreach (row; 0..ROWS)
+                foreach (col; 0..COLS)
+                    if (newBoard.hits[row][col] == 'Y')
+                        board.hits[row][col] = 'X';
+            return true;
+        }
+        return false;
+    }
+
+    Board makeSecretBoard (const ref Board board)
+    {
+
+        Board secretBoard = board;
+        foreach(row;0..ROWS)
+            foreach(col;0..COLS)
+                if (board.ships[row][col] == 'O' && board.hits[row][col] != 'X')
+                    secretBoard.ships[row][col] = '.';
+        return secretBoard;
+    }
+
+    void play( Player [2] player )
+    {
+        Board [2] board;
+        foreach ( num ;0..2)
+            board[num] = player[num].prepareMove();
+
+        while (!gameOver(board))
+        {
+            foreach (num; 0..2)
+            {
+                auto newBoard = player[num].battleMove();
+                if (!processBattleMove (board[!num], newBoard))
+                    return;
+            }
+
+            foreach (num; 0..2)
+            {
+                player[num].updateMyMove (makeSecretBoard (board[!num]));
+                player[num].updateEnemyMove (board[num]);
+            }
+        }
+    }
+}
+
+
 class Button
 {
     int x,y,width,height;
@@ -43,7 +314,6 @@ class Button
         nameColor = nameColor_;
         name = name_;
     }
-
     bool inside (int px, int py)
     {
         return (x<=px && px<=x+width && y<=py && py<=y+height);
@@ -67,11 +337,13 @@ struct Board
   char [ROWS][COLS] hits;
   char [ROWS][COLS] ships;
   bool drawAllShips;
-  char [ROWS][COLS] light;
 }
 
-immutable int BOARD_X = 50;
-immutable int BOARD_Y = 50;
+immutable int MY_BOARD_X = 50;
+immutable int MY_BOARD_Y = 50;
+
+immutable int ENEMY_BOARD_X = 550;
+immutable int ENEMY_BOARD_Y = 50;
 
 immutable int CELL_X = 40;
 immutable int CELL_Y = 40;
@@ -139,32 +411,22 @@ void initBoard (ref Board board)
     board.drawAllShips = false;
 }
 
-
-void draw (const ref Board board)
+void drawBoard (const ref Board board, int boardX, int boardY)
 {
-    al_clear_to_color (al_map_rgb_f (128,128,128));
     for (int row = 0; row < ROWS; row++)
         for (int col = 0; col < COLS; col++)
-            drawCell (board, row, col, board.hits[row][col], board.ships[row][col], board.light[row][col]);
-    finishButton.draw ();
-    al_flip_display ();
-
+            drawCell (board, boardX, boardY, row, col, board.hits[row][col], board.ships[row][col]);
 }
 
 
 
-void drawCell (const ref Board board, int row, int col, char hits, char ships, char light)
+void drawCell (const ref Board board, int boardX, int boardY, int row, int col, char hits, char ships)
 {
-    int curx = BOARD_X + col * CELL_X;
-    int cury = BOARD_Y + row * CELL_Y;
+    int curx = boardX + col * CELL_X;
+    int cury = boardY + row * CELL_Y;
 
     double CELL_SCALE = min (CELL_X, CELL_Y);
     al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),0.05* CELL_SCALE);
-    if (light == '+')
-    {
-        al_draw_filled_rectangle (curx, cury, curx + CELL_X, cury + CELL_Y,
-                                          al_map_rgb_f (0.8, 0.3, 0.5));
-    }
     if (ships == 'O' && (hits == 'X' || board.drawAllShips))
         al_draw_circle(curx + 0.5*CELL_X, cury + 0.5*CELL_Y, 0.375* CELL_SCALE, al_map_rgb_f(0,153,0),0.1* CELL_SCALE);
     if (hits == 'X')
@@ -177,92 +439,19 @@ void drawCell (const ref Board board, int row, int col, char hits, char ships, c
         al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
         al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
     }
-
-}
-
-bool is_finished;
-
-
-void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board)
-{
-    bool local_finished = false;
-    while (!local_finished)
-    {
-        draw (board);
-
-        ALLEGRO_EVENT current_event;
-        al_wait_for_event (event_queue, &current_event);
-
-        switch (current_event.type)
-        {
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                happy_end ();
-                break;
-
-            case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
-                draw (board);
-                break;
-
-            case ALLEGRO_EVENT_KEY_DOWN:
-
-                int keycode = current_event.keyboard.keycode;
-
-                if (moveKeyboard (board, keycode))
-                {
-                    local_finished = true;
-                }
-                break;
-
-            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-
-                int x = current_event.mouse.x;
-                int y = current_event.mouse.y;
-
-                if (moveMouse (board, x, y))
-                {
-                    local_finished = true;
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
-void moveX (ref Board board)
-{
-  moveHuman !(moveMouseBattle, moveKeyboardBattle) (board);
 }
 
 void main_loop ()
 {
-    finishButton = new Button (600, 200, 100, 30,
-                               al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "FINISH");
+    finishButton = new Button (200, 700, 100, 30,
+                               al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
 
-    Board board;
-    initBoard (board);
-    is_finished = false;
+    Player humanPlayer = new HumanPlayer ();
+    Player computerPlayer = new ComputerPlayer ();
+    Server server = new Server ();
+    server.play ([humanPlayer, computerPlayer]);
 
-    board.drawAllShips = true;
-    draw (board);
-    moveHuman !(moveMousePrepare, moveKeyboardPrepare) (board);
-    board.drawAllShips = false;
-
-    while (true)
-    {
-        draw (board);
-        moveX (board);
-        draw(board);
-        if (wins (board))
-        {
-            writeln ("Player wins");
-            is_finished = true;
-        }
-        if (is_finished) break;
-    }
-    draw (board);
-
+//    draw (board);
     while (true)
     {
         ALLEGRO_EVENT current_event;
@@ -271,7 +460,7 @@ void main_loop ()
         switch (current_event.type)
         {
              case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
-                draw (board);
+//                draw (board);
                 break;
 
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -314,19 +503,19 @@ int main (string [] args)
 
 
 
-bool moveMouseBattle (ref Board board, int x, int y)
+bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
 {
     if (finishButton.inside (x, y))
     {
         return finishBattleMove (board);
     }
 
-    if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
+    if (x < boardX || boardX + ROWS *CELL_X <= x)
         return false;
-    if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
+    if (y < boardY || boardY + COLS *CELL_Y <= y)
         return false;
-    int row = (y - BOARD_Y) / CELL_Y;
-    int col = (x - BOARD_X) / CELL_X;
+    int row = (y - boardY) / CELL_Y;
+    int col = (x - boardX) / CELL_X;
 
     if (board.hits[row][col] == 'Y')   board.hits[row][col] = '.';
     else
@@ -336,7 +525,7 @@ bool moveMouseBattle (ref Board board, int x, int y)
     return false;
 }
 
-bool finishBattleMove (ref Board board)
+bool finishBattleMove (const ref Board board)
 {
     int cnt = 0;
     foreach (row; 0..ROWS)
@@ -356,10 +545,6 @@ bool finishBattleMove (ref Board board)
         return false;
     }
 
-    foreach (row; 0..ROWS)
-        foreach (col; 0..COLS)
-            if (board.hits[row][col] == 'Y')
-                board.hits[row][col] = 'X';
     return true;
 }
 
@@ -372,19 +557,19 @@ bool moveKeyboardBattle (ref Board board, int keycode)
     return false;
 }
 
-bool moveMousePrepare (ref Board board,  int x, int y)
+bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y)
 {
     if (finishButton.inside (x, y))
     {
         return finishPrepareMove (board);
     }
 
-    if (x < BOARD_X || BOARD_X + ROWS *CELL_X <= x)
+    if (x < boardX || boardX + ROWS *CELL_X <= x)
         return false;
-    if (y < BOARD_Y|| BOARD_Y+ COLS *CELL_Y <= y)
+    if (y < boardY || boardY + COLS *CELL_Y <= y)
         return false;
-    int row = (y - BOARD_Y) / CELL_Y;
-    int col = (x - BOARD_X) / CELL_X;
+    int row = (y - boardY) / CELL_Y;
+    int col = (x - boardX) / CELL_X;
 
     if (board.ships[row][col] == 'O') board.ships[row][col] = '.';
     else
@@ -395,29 +580,14 @@ bool moveMousePrepare (ref Board board,  int x, int y)
 
 bool finishPrepareMove (ref Board board)
 {
-    for (int row = 0; row < ROWS; row++)
-        for (int col= 0; col < COLS; col++)
-        {
-            board.light[row][col] = '-';
-        }
-
-
     for (int row = 0; row < ROWS - 1; row++)
         for (int col= 0; col < COLS - 1; col++)
-        {
-
             if ((board.ships[row][col] == 'O') + (board.ships[row + 1][col] == 'O') +
                 (board.ships[row][col + 1] == 'O') + (board.ships[row + 1][col + 1] == 'O') >= 3)
               {
-                  board.light[row][col] = '+';
-                  board.light[row + 1][col] = '+';
-                  board.light[row][col + 1] = '+';
-                  board.light[row + 1][col + 1] = '+';
-
                   writeln("Your ships touch each other");
                   return false;
               }
-        }
     bool [ROWS] [COLS] b;
     foreach (row; 0..ROWS)
         foreach (col; 0..COLS)
@@ -431,12 +601,11 @@ bool finishPrepareMove (ref Board board)
             {
                 b[row][col] = false;
                 int count1 = 1, count2 = 1;
-                for (int x = row + 1; x < ROWS; x++)
-                    if(b[x][col])
+                for (int z = row + 1; z < ROWS; z++)
+                    if(b[z][col])
                     {
                         count1++;
-                        b[x][col] = false;
-
+                        b[z][col] = false;
                     }
                     else break;
                 for (int y = col + 1; y < COLS; y++)
@@ -447,99 +616,20 @@ bool finishPrepareMove (ref Board board)
                     }
 
                     else break;
-
                 if (count1 == 1)
                     count1 = count2;
                 if (count1 <= 4)
-                {
-                    actual_ships[count1]++;
-                }
-
-                else
-                {
-                    board.light[row][col] = '+';
-                    for (int x = row + 1; x < ROWS; x++)
-                        if(board.ships[x][col] == 'O')
-                        {
-                            board.light[x][col] = '+';
-                        }
-                        else break;
-                    for (int y = col + 1; y < COLS; y++)
-                        if(board.ships[row][y] == 'O')
-                        {
-                            board.light[row][y] = '+';
-                        }
-                        else break;
-
-                    writeln ("Big ship");
-                    return false;
-                }
-           }
+                     actual_ships[count1]++;
+                else {writeln ("Big ship"); return false;}
+            }
     }
+
     foreach (len; 0..MAX_LEN + 1)
     {
-        if (actual_ships[len] < NUM_SHIPS[len])
+        if (actual_ships[len] != NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
                     actual_ships[len], " instead of ", NUM_SHIPS[len]);
-            return false;
-        }
-        else if(actual_ships[len] > NUM_SHIPS[len])
-        {
-            writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
-
-            foreach (row; 0..ROWS)
-                foreach (col; 0..COLS)
-                    b[row][col] = (board.ships[row][col] == 'O');
-
-
-            for (int row = 0; row < ROWS; row++)
-            {
-                for (int col = 0; col < COLS; col++)
-                {
-                    if (b[row][col])
-                    {
-                        b[row][col] = false;
-                        int count1 = 1, count2 = 1;
-                        for (int x = row + 1; x < ROWS; x++)
-                            if(b[x][col])
-                            {
-                                count1++;
-                                b[x][col] = false;
-
-                            }
-                            else break;
-                        for (int y = col + 1; y < COLS; y++)
-                            if(b[row][y])
-                            {
-                                count2++;
-                                b[row][y] = false;
-                            }
-
-                            else break;
-
-                        if (count1 == 1)
-                            count1 = count2;
-                        if (count1 == len)
-                        {
-                            board.light[row][col] = '+';
-                            for (int x = row + 1; x < ROWS; x++)
-                                if(board.ships[x][col] == 'O')
-                                {
-                                    board.light[x][col] = '+';
-                                }
-                                else break;
-                            for (int y = col + 1; y < COLS; y++)
-                                if(board.ships[row][y] == 'O')
-                                {
-                                    board.light[row][y] = '+';
-                                }
-                                else break;
-                        }
-                    }
-                }
-            }
             return false;
         }
     }
