@@ -478,10 +478,68 @@ bool finishPrepareMove (ref Board board)
     }
     foreach (len; 0..MAX_LEN + 1)
     {
-        if (actual_ships[len] != NUM_SHIPS[len])
+        if (actual_ships[len] < NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
                     actual_ships[len], " instead of ", NUM_SHIPS[len]);
+            return false;
+        }
+        else if(actual_ships[len] > NUM_SHIPS[len])
+        {
+            writeln("Number of ships of length ", len, " is ",
+                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+
+            foreach (row; 0..ROWS)
+                foreach (col; 0..COLS)
+                    b[row][col] = (board.ships[row][col] == 'O');
+
+
+            for (int row = 0; row < ROWS; row++)
+            {
+                for (int col = 0; col < COLS; col++)
+                {
+                    if (b[row][col])
+                    {
+                        b[row][col] = false;
+                        int count1 = 1, count2 = 1;
+                        for (int x = row + 1; x < ROWS; x++)
+                            if(b[x][col])
+                            {
+                                count1++;
+                                b[x][col] = false;
+
+                            }
+                            else break;
+                        for (int y = col + 1; y < COLS; y++)
+                            if(b[row][y])
+                            {
+                                count2++;
+                                b[row][y] = false;
+                            }
+
+                            else break;
+
+                        if (count1 == 1)
+                            count1 = count2;
+                        if (count1 == len)
+                        {
+                            board.light[row][col] = '+';
+                            for (int x = row + 1; x < ROWS; x++)
+                                if(board.ships[x][col] == 'O')
+                                {
+                                    board.light[x][col] = '+';
+                                }
+                                else break;
+                            for (int y = col + 1; y < COLS; y++)
+                                if(board.ships[row][y] == 'O')
+                                {
+                                    board.light[row][y] = '+';
+                                }
+                                else break;
+                        }
+                    }
+                }
+            }
             return false;
         }
     }
