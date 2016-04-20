@@ -112,6 +112,36 @@ class HumanPlayer : Player
         initBoard (myBoard);
         initBoard (enemyBoard);
 
+        myBoard.ships[0][0] = 'O';
+        myBoard.ships[0][1] = 'O';
+        myBoard.ships[0][2] = 'O';
+        myBoard.ships[0][3] = 'O';
+
+        myBoard.ships[2][0] = 'O';
+        myBoard.ships[2][1] = 'O';
+        myBoard.ships[2][2] = 'O';
+
+        myBoard.ships[3][4] = 'O';
+        myBoard.ships[3][5] = 'O';
+        myBoard.ships[3][6] = 'O';
+
+        myBoard.ships[8][0] = 'O';
+        myBoard.ships[9][0] = 'O';
+
+        myBoard.ships[8][3] = 'O';
+        myBoard.ships[9][3] = 'O';
+
+        myBoard.ships[8][9] = 'O';
+        myBoard.ships[9][9] = 'O';
+
+        myBoard.ships[5][5] = 'O';
+
+        myBoard.ships[5][9] = 'O';
+
+        myBoard.ships[6][1] = 'O';
+
+        myBoard.ships[7][7] = 'O';
+
         draw ();
         moveHuman !(moveMousePrepare, moveKeyboardPrepare) (myBoard, MY_BOARD_X, MY_BOARD_Y);
         draw ();
@@ -121,11 +151,13 @@ class HumanPlayer : Player
     override void updateEnemyMove (Board newMyBoard)
     {
         myBoard = newMyBoard;
+        draw ();
     }
 
     override void updateMyMove (Board newEnemyBoard)
     {
         enemyBoard = newEnemyBoard;
+        draw ();
     }
 }
 
@@ -149,6 +181,9 @@ class ComputerPlayer : Player
 
     override Board prepareMove()
     {
+        initBoard (myBoard);
+        initBoard (enemyBoard);
+
         myBoard.ships[0][0] = 'O';
         myBoard.ships[0][1] = 'O';
         myBoard.ships[0][2] = 'O';
@@ -199,7 +234,6 @@ class Server
 {
     bool gameOver (Board [2] board)
     {
-/*
         if (wins (board[1]))
         {
             writeln ("Human wins");
@@ -210,21 +244,31 @@ class Server
             writeln ("Computer wins");
             return true;
         }
-*/
         return false;
     }
 
-    bool processBattleMove (const ref Board oldBoard, ref Board newBoard)
+    bool processBattleMove (ref Board board, const ref Board newBoard)
     {
         if (finishBattleMove (newBoard))
         {
             foreach (row; 0..ROWS)
                 foreach (col; 0..COLS)
                     if (newBoard.hits[row][col] == 'Y')
-                        newBoard.hits[row][col] = 'X';
+                        board.hits[row][col] = 'X';
             return true;
         }
         return false;
+    }
+
+    Board makeSecretBoard (const ref Board board)
+    {
+
+        Board secretBoard = board;
+        foreach(row;0..ROWS)
+            foreach(col;0..COLS)
+                if (board.ships[row][col] == 'O' && board.hits[row][col] != 'X')
+                    secretBoard.ships[row][col] = '.';
+        return secretBoard;
     }
 
     void play( Player [2] player )
@@ -240,12 +284,11 @@ class Server
                 auto newBoard = player[num].battleMove();
                 if (!processBattleMove (board[!num], newBoard))
                     return;
-                board[!num] = newBoard;
             }
 
             foreach (num; 0..2)
             {
-                player[num].updateMyMove (board[!num]);
+                player[num].updateMyMove (makeSecretBoard (board[!num]));
                 player[num].updateEnemyMove (board[num]);
             }
         }
@@ -482,7 +525,7 @@ bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
     return false;
 }
 
-bool finishBattleMove (ref Board board)
+bool finishBattleMove (const ref Board board)
 {
     int cnt = 0;
     foreach (row; 0..ROWS)
