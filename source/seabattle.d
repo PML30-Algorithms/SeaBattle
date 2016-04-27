@@ -524,17 +524,42 @@ void drawCell (const ref Board board, int boardX, int boardY, int row, int col, 
 void sendBoard (Socket socket, Board board)
 {
     debug {writeln ("send start"); stdout.flush ();}
-    int len = socket.send (board.toString ());
-    debug {writeln ("send finish ", len); stdout.flush ();}
+    auto s = board.toString ();
+    int left = 0;
+    while (left < 200)
+    {
+        int len = socket.send (s);
+        debug {writeln ("send actual ", len); stdout.flush ();}
+        left += len;
+        s = s[len..$];
+    }
+    assert (left == 200);
+    debug {writeln ("send finish ", left); stdout.flush ();}
 }
 
 Board receiveBoard (Socket socket)
 {
-    debug {writeln ("receive start"); stdout.flush ();}
-    char [1024] buf;
-    int len = socket.receive (buf);
-    debug {writeln ("receive finish ", len); stdout.flush ();}
-    return toBoard (buf[0..len]);
+    debug {writeln ("receive start ", socket.handle ()); stdout.flush ();}
+    static char [] [socket_t] buf;
+    static int [socket_t] left;
+    auto handle = socket.handle ();
+    if (handle !in buf)
+    {
+        buf[handle] = new char [1024];
+        left[handle] = 0;
+    }
+    while (left[handle] < 200)
+    {
+        int len = socket.receive (buf[handle][left[handle]..$]);
+        debug {writeln ("receive actual ", len); stdout.flush ();}
+        left[handle] += len;
+    }
+    auto res = buf[handle][0..200].dup;
+    for (int i = 200; i < left[handle]; i++)
+        buf[handle][i - 200] = buf[handle][i];
+    left[handle] -= 200;
+    debug {writeln ("receive finish ", left[handle]); stdout.flush ();}
+    return toBoard (res);
 }
 
 void main_loop (string [] args)
@@ -542,12 +567,12 @@ void main_loop (string [] args)
     finishButton = new Button (200, 700, 100, 30,
                                al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
 
-    string IP = "192.168.1.7";
+    string IP = "127.0.0.1";
     if (args.length > 1)
     {
         IP = args[1];
     }
-    ushort PORT_NUMBER = 8080;
+    ushort PORT_NUMBER = 80;
     if (args.length > 2)
     {
         PORT_NUMBER = to!ushort(args[2]);
