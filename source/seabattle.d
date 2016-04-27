@@ -6,7 +6,7 @@ import std.math;
 import std.random;
 import std.conv;
 
-immutable MaxShots = 4;
+
 
 import std.datetime;
 import std.concurrency;
@@ -38,6 +38,7 @@ abstract class Player
     Board prepareMove();
     void updateEnemyMove (Board newMyBoard);
     void updateMyMove (Board newEnemyBoard);
+
 }
 
 class HumanPlayer : Player
@@ -66,7 +67,7 @@ class HumanPlayer : Player
 
                     int keycode = current_event.keyboard.keycode;
 
-                    if (moveKeyboard (board, keycode))
+                    if (moveKeyboard (board, keycode, myBoard.MaxShots()))
                     {
                         local_finished = true;
                     }
@@ -77,7 +78,7 @@ class HumanPlayer : Player
                     int x = current_event.mouse.x;
                     int y = current_event.mouse.y;
 
-                    if (moveMouse (board, boardX, boardY, x, y))
+                    if (moveMouse (board, boardX, boardY, x, y, myBoard.MaxShots()))
                     {
                         local_finished = true;
                     }
@@ -291,9 +292,9 @@ class Server
         return false;
     }
 
-    bool processBattleMove (ref Board board, const ref Board newBoard)
+    bool processBattleMove (ref Board board, const ref Board newBoard, int MaxShots)
     {
-        if (finishBattleMove (newBoard))
+        if (finishBattleMove (newBoard, MaxShots))
         {
             foreach (row; 0..ROWS)
                 foreach (col; 0..COLS)
@@ -304,7 +305,7 @@ class Server
         return false;
     }
 
-    Board makeSecretBoard (const ref Board board)
+    Board makeSecretBoard(const ref Board board)
     {
 
         Board secretBoard = board;
@@ -327,7 +328,7 @@ class Server
             foreach (num; 0..2)
             {
                 auto newBoard = player[num].battleMove();
-                if (!processBattleMove (board[!num], newBoard))
+                if (!processBattleMove (board[!num], newBoard, board[num].MaxShots ()))
                     return;
             }
 
@@ -381,6 +382,7 @@ struct Board
 {
   char [ROWS][COLS] hits;
   char [ROWS][COLS] ships;
+  int [MAX_LEN+1] actual_ships;
   bool drawAllShips;
   char [ROWS][COLS] light;
 
@@ -392,6 +394,47 @@ struct Board
         foreach (row; 0..ROWS)
             res ~= ships[row];
         return res;
+    }
+
+    int MaxShots()
+    {
+        int cntship=0;
+        int maxshots = 1;
+        int countershots = 1;
+        int saverow,savecol = 0;
+        foreach ( row; 0..ROWS)
+            foreach (col; 0.. COLS)
+            {
+
+                cntship =-1;
+                if (ships[row][col] == 'O')
+                {
+                    for (int d=0;d<DIRS; d++)
+                    {
+                        saverow = row;
+                        savecol = col;
+                        bool flag = false;
+                        while (saverow < ROWS && savecol < COLS)
+                        {
+                            if (ships[saverow][savecol] == 'O')
+                            {
+                                cntship++;
+                            }
+                            else break;
+                            if (hits[saverow][savecol] != 'X')
+                                flag = true;
+
+                            saverow += Drow[d];
+                            savecol += Dcol[d];
+                        }
+                        if (flag && cntship > maxshots)
+                            maxshots = cntship;
+
+                    }
+
+                }
+            }
+        return maxshots;
     }
 }
 
@@ -426,10 +469,10 @@ immutable int ROWS = 10;
 immutable int COLS = 10;
 
 
-immutable int DIRS = 4;
+immutable int DIRS = 2;
 
-immutable int [DIRS] Drow=[0,+1,+1,+1];
-immutable int [DIRS] Dcol=[+1,+1,0,-1];
+immutable int [DIRS] Drow=[0,+1];
+immutable int [DIRS] Dcol=[+1,0];
 
 immutable int MAX_LEN = 4;
 immutable int NUM_SHIPS [MAX_LEN + 1] = [0, 4, 3, 2, 1];
@@ -641,11 +684,11 @@ int main (string [] args)
 
 
 
-bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
+bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y, int MaxShots)
 {
     if (finishButton.inside (x, y))
     {
-        return finishBattleMove (board);
+        return finishBattleMove (board, MaxShots);
     }
 
     if (x < boardX || boardX + ROWS *CELL_X <= x)
@@ -663,13 +706,18 @@ bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
     return false;
 }
 
-bool finishBattleMove (const ref Board board)
+bool finishBattleMove (const ref Board board, int MaxShots)
 {
     int cnt = 0;
     foreach (row; 0..ROWS)
         foreach (col; 0..COLS)
         if (board.hits[row][col] == 'Y')
             cnt ++;
+
+
+
+
+
 
     if (cnt > MaxShots)
     {
@@ -686,16 +734,16 @@ bool finishBattleMove (const ref Board board)
     return true;
 }
 
-bool moveKeyboardBattle (ref Board board, int keycode)
+bool moveKeyboardBattle (ref Board board, int keycode, int MaxShots)
 {
     if (keycode == ALLEGRO_KEY_ENTER)
     {
-        return finishBattleMove (board);
+        return finishBattleMove (board, MaxShots);
     }
     return false;
 }
 
-bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y)
+bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y, int  MaxShots)
 {
     if (finishButton.inside (x, y))
     {
@@ -746,7 +794,7 @@ bool finishPrepareMove (ref Board board)
         foreach (col; 0..COLS)
             b[row][col] = (board.ships[row][col] == 'O');
 
-    int actual_ships [MAX_LEN + 1];
+
     for (int row = 0; row < ROWS; row++)
     {
         for (int col = 0; col < COLS; col++)
@@ -775,7 +823,7 @@ bool finishPrepareMove (ref Board board)
                     count1 = count2;
                 if (count1 <= 4)
                 {
-                    actual_ships[count1]++;
+                    board.actual_ships[count1]++;
                 }
 
                 else
@@ -801,16 +849,16 @@ bool finishPrepareMove (ref Board board)
     }
     foreach (len; 0..MAX_LEN + 1)
     {
-        if (actual_ships[len] < NUM_SHIPS[len])
+        if (board.actual_ships[len] < NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+                    board.actual_ships[len], " instead of ", NUM_SHIPS[len]);
             return false;
         }
-        else if(actual_ships[len] > NUM_SHIPS[len])
+        else if(board.actual_ships[len] > NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+                    board.actual_ships[len], " instead of ", NUM_SHIPS[len]);
 
             foreach (row; 0..ROWS)
                 foreach (col; 0..COLS)
@@ -866,10 +914,14 @@ bool finishPrepareMove (ref Board board)
             return false;
         }
     }
+
     return true;
 }
 
-bool moveKeyboardPrepare (ref Board board, int keycode)
+
+
+
+bool moveKeyboardPrepare (ref Board board, int keycode, int MaxShots)
 {
     if (keycode == ALLEGRO_KEY_ENTER)
     {
