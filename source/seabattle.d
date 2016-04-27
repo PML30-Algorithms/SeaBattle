@@ -4,6 +4,7 @@ import std.stdio;
 import std.algorithm;
 import std.math;
 import std.random;
+import std.conv;
 
 immutable MaxShots = 4;
 
@@ -546,10 +547,10 @@ void main_loop (string [] args)
     {
         IP = args[1];
     }
-    int PORT_NUMBER = 8080;
+    ushort PORT_NUMBER = 8080;
     if (args.length > 2)
     {
-        PORT_NUMBER = args[2];
+        PORT_NUMBER = to!ushort(args[2]);
     }
 
     version (server)
