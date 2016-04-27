@@ -547,6 +547,7 @@ void main_loop ()
     {
         auto address = new InternetAddress (PORT_NUMBER);
         auto socket = new TcpSocket ();
+        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
         socket.bind (address);
         socket.listen (1);
         Player remoteNetworkPlayer0 = new RemoteNetworkPlayer (socket);
@@ -557,7 +558,9 @@ void main_loop ()
     else version (client)
     {
         auto address = parseAddress ("127.0.0.1", PORT_NUMBER);
-        auto socket = new TcpSocket (address);
+        auto socket = new TcpSocket ();
+        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
+        socket.connect (address);
 
         Player humanPlayer = new HumanPlayer ();
         sendBoard (socket, humanPlayer.prepareMove ());
