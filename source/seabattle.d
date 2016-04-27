@@ -465,10 +465,10 @@ void drawShips (const ref Board board, int boardX, int boardY, int row, int col)
     al_draw_filled_rectangle (CELL_X*10,13*CELL_Y,CELL_X *14,14*CELL_Y,  al_map_rgb_f(0.5, 0.2, 0.77) );
     al_draw_text(global_font,al_map_rgb_f(1.0, 1.0, 1.0) , CELL_X*10, CELL_Y*15,0,"1");
 
-    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.2) , CELL_X, CELL_Y*18,0, "%d", board.actual_ships[1]);
-    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.3) , CELL_X*3, CELL_Y*18,0, "%d",board.actual_ships[2]);
-    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.4) , CELL_X*6, CELL_Y*18,0, "%d",board.actual_ships[3]);
-    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.5) , CELL_X*10, CELL_Y*18,0, "%d",board.actual_ships[4]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.2) , CELL_X, CELL_Y*16,0, "%d", board.actual_ships[1]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.3) , CELL_X*3, CELL_Y*16,0, "%d",board.actual_ships[2]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.4) , CELL_X*6, CELL_Y*16,0, "%d",board.actual_ships[3]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.5) , CELL_X*10, CELL_Y*16,0, "%d",board.actual_ships[4]);
 }
 
 void main_loop ()
@@ -610,7 +610,8 @@ bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y)
 
 bool finishPrepareMove (ref Board board)
 {
-
+    for (int i = 1; i<MAX_LEN + 1;i++)
+                board.actual_ships[i] = 0;
     for (int row = 0; row < ROWS; row++)
         for (int col= 0; col < COLS; col++)
         {
@@ -758,8 +759,7 @@ bool finishPrepareMove (ref Board board)
                     }
                 }
             }
-            for (int i = 1; i<MAX_LEN + 1;i++)
-                board.actual_ships[i] = 0;
+
             return false;
         }
     }
