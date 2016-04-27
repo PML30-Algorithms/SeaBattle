@@ -243,12 +243,12 @@ class Server
         }
         if (wins (board[1]))
         {
-            writeln ("Human wins");
+            writeln ("Player1 wins");
             return true;
         }
         if (wins (board[0]))
         {
-            writeln ("Computer wins");
+            writeln ("Player2 wins");
             return true;
         }
 
