@@ -13,6 +13,7 @@ import std.range;
 import std.typecons;
 import core.stdc.stdlib;
 import std.exception;
+import std.socket;
 import std.stdio;
 import std.string;
 pragma (lib, "dallegro5");
@@ -230,6 +231,48 @@ class ComputerPlayer : Player
     }
 }
 
+class RemoteNetworkPlayer : Player
+{
+    Socket socket;
+
+    this (Socket listeningSocket)
+    {
+        socket = listeningSocket.accept ();
+    }
+
+    ~this ()
+    {
+        socket.shutdown (SocketShutdown.BOTH);
+        socket.close ();
+    }
+
+    override Board battleMove()
+    {
+        enemyBoard = receiveBoard (socket);
+        return enemyBoard;
+    }
+
+    override Board prepareMove()
+    {
+        initBoard (myBoard);
+        initBoard (enemyBoard);
+        myBoard = receiveBoard (socket);
+        return myBoard;
+    }
+
+    override void updateEnemyMove (Board newMyBoard)
+    {
+        myBoard = newMyBoard;
+        sendBoard (socket, myBoard);
+    }
+
+    override void updateMyMove (Board newEnemyBoard)
+    {
+        enemyBoard = newEnemyBoard;
+        sendBoard (socket, enemyBoard);
+    }
+}
+
 class Server
 {
     bool gameOver (Board [2] board)
@@ -273,6 +316,7 @@ class Server
 
     void play( Player [2] player )
     {
+        stdout.flush ();
         Board [2] board;
         foreach ( num ;0..2)
             board[num] = player[num].prepareMove();
@@ -338,6 +382,34 @@ struct Board
   char [ROWS][COLS] ships;
   bool drawAllShips;
   char [ROWS][COLS] light;
+
+    string toString () const
+    {
+        string res;
+        foreach (row; 0..ROWS)
+            res ~= hits[row];
+        foreach (row; 0..ROWS)
+            res ~= ships[row];
+        return res;
+    }
+}
+
+Board toBoard (const (char) [] s)
+{
+    Board res;
+    foreach (row; 0..ROWS)
+        foreach (col; 0..COLS)
+        {
+            res.hits[row][col] = s[0];
+            s = s[1..$];
+        }
+    foreach (row; 0..ROWS)
+        foreach (col; 0..COLS)
+        {
+            res.ships[row][col] = s[0];
+            s = s[1..$];
+        }
+    return res;
 }
 
 immutable int MY_BOARD_X = 50;
@@ -448,15 +520,73 @@ void drawCell (const ref Board board, int boardX, int boardY, int row, int col, 
 
 }
 
-void main_loop ()
+void sendBoard (Socket socket, Board board)
+{
+    debug {writeln ("send start"); stdout.flush ();}
+    int len = socket.send (board.toString ());
+    debug {writeln ("send finish ", len); stdout.flush ();}
+}
+
+Board receiveBoard (Socket socket)
+{
+    debug {writeln ("receive start"); stdout.flush ();}
+    char [1024] buf;
+    int len = socket.receive (buf);
+    debug {writeln ("receive finish ", len); stdout.flush ();}
+    return toBoard (buf[0..len]);
+}
+
+void main_loop (string [] args)
 {
     finishButton = new Button (200, 700, 100, 30,
                                al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
 
-    Player humanPlayer = new HumanPlayer ();
-    Player computerPlayer = new ComputerPlayer ();
-    Server server = new Server ();
-    server.play ([humanPlayer, computerPlayer]);
+    string IP = "192.168.1.7";
+    if (args.length > 1)
+    {
+        IP = args[1];
+    }
+    int PORT_NUMBER = 8080;
+    if (args.length > 2)
+    {
+        PORT_NUMBER = args[2];
+    }
+
+    version (server)
+    {
+        auto address = parseAddress (IP, PORT_NUMBER);
+        auto socket = new TcpSocket ();
+        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
+        socket.bind (address);
+        socket.listen (1);
+        Player remoteNetworkPlayer0 = new RemoteNetworkPlayer (socket);
+        Player remoteNetworkPlayer1 = new RemoteNetworkPlayer (socket);
+        Server server = new Server ();
+        server.play ([remoteNetworkPlayer0, remoteNetworkPlayer1]);
+    }
+    else version (client)
+    {
+        auto address = parseAddress (IP, PORT_NUMBER);
+        auto socket = new TcpSocket ();
+        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
+        socket.connect (address);
+
+        Player humanPlayer = new HumanPlayer ();
+        sendBoard (socket, humanPlayer.prepareMove ());
+        while (true)
+        {
+            sendBoard (socket, humanPlayer.battleMove ());
+            humanPlayer.updateMyMove (receiveBoard (socket));
+            humanPlayer.updateEnemyMove (receiveBoard (socket));
+        }
+    }
+    else
+    {
+        Player humanPlayer = new HumanPlayer ();
+        Player computerPlayer = new ComputerPlayer ();
+        Server server = new Server ();
+        server.play ([humanPlayer, computerPlayer]);
+    }
 
 //    draw (board);
     while (true)
@@ -501,7 +631,7 @@ int main (string [] args)
     return al_run_allegro (
     {
         init ();
-        main_loop ();
+        main_loop (args);
         happy_end ();
         return 0;
     });
