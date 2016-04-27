@@ -567,18 +567,19 @@ void main_loop (string [] args)
     finishButton = new Button (200, 700, 100, 30,
                                al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
 
+
     string IP = "127.0.0.1";
-    if (args.length > 1)
-    {
-        IP = args[1];
-    }
-    ushort PORT_NUMBER = 80;
     if (args.length > 2)
     {
-        PORT_NUMBER = to!ushort(args[2]);
+        IP = args[2];
+    }
+    ushort PORT_NUMBER = 80;
+    if (args.length > 3)
+    {
+        PORT_NUMBER = to!ushort(args[3]);
     }
 
-    version (server)
+    if (args.length > 1 && args[1] == "-server")
     {
         auto address = parseAddress (IP, PORT_NUMBER);
         auto socket = new TcpSocket ();
@@ -590,7 +591,7 @@ void main_loop (string [] args)
         Server server = new Server ();
         server.play ([remoteNetworkPlayer0, remoteNetworkPlayer1]);
     }
-    else version (client)
+    else if (args.length > 1 && args[1] == "-client")
     {
         auto address = parseAddress (IP, PORT_NUMBER);
         auto socket = new TcpSocket ();
