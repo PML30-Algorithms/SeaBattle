@@ -96,8 +96,10 @@ class HumanPlayer : Player
         al_clear_to_color (al_map_rgb_f (128,128,128));
         drawBoard (myBoard, MY_BOARD_X, MY_BOARD_Y);
         drawBoard (enemyBoard, ENEMY_BOARD_X, ENEMY_BOARD_Y);
+        drawShips (myBoard,MY_BOARD_X, MY_BOARD_Y, ROWS, COLS);
         finishButton.draw ();
         al_flip_display ();
+
     }
 
     override Board battleMove()
@@ -277,17 +279,25 @@ class Server
 {
     bool gameOver (Board [2] board)
     {
+        if (wins (board[1]) && wins (board[0]))
+        {
+            writeln("Draw");
+            return true;
+        }
         if (wins (board[1]))
         {
-            writeln ("Human wins");
+            writeln ("Player1 wins");
             return true;
         }
         if (wins (board[0]))
         {
-            writeln ("Computer wins");
+            writeln ("Player2 wins");
             return true;
         }
+
+
         return false;
+
     }
 
     bool processBattleMove (ref Board board, const ref Board newBoard)
@@ -371,6 +381,7 @@ class Button
         al_draw_text (global_font, nameColor, x + width * 0.5, y + (height - FONT_HEIGHT) * 0.5,
                       ALLEGRO_ALIGN_CENTRE, name.toStringz);
 
+
     }
 }
 
@@ -382,6 +393,7 @@ struct Board
   char [ROWS][COLS] ships;
   bool drawAllShips;
   char [ROWS][COLS] light;
+  int actual_ships [MAX_LEN + 1];
 
     string toString () const
     {
@@ -520,6 +532,25 @@ void drawCell (const ref Board board, int boardX, int boardY, int row, int col, 
 
 }
 
+void drawShips (const ref Board board, int boardX, int boardY, int row, int col)
+{
+    int curx = boardX + col * CELL_X;
+    int cury = boardY + row * CELL_Y;
+    al_draw_filled_rectangle (CELL_X,13*CELL_Y,CELL_X*2,14*CELL_Y,  al_map_rgb_f(0.5, 0.2, 0.77) );
+    al_draw_text(global_font,al_map_rgb_f(1.0, 1.0, 1.0) , CELL_X, CELL_Y*15,0,"4");
+    al_draw_filled_rectangle (CELL_X*3,13*CELL_Y,CELL_X *5,14*CELL_Y,  al_map_rgb_f(0.5, 0.2, 0.77) );
+    al_draw_text(global_font,al_map_rgb_f(1.0, 1.0, 1.0) , CELL_X*3, CELL_Y*15,0,"3");
+    al_draw_filled_rectangle (CELL_X*6,13*CELL_Y,CELL_X *9,14*CELL_Y,  al_map_rgb_f(0.5, 0.2, 0.77) );
+    al_draw_text(global_font,al_map_rgb_f(1.0, 1.0, 1.0) , CELL_X*6, CELL_Y*15,0,"2");
+    al_draw_filled_rectangle (CELL_X*10,13*CELL_Y,CELL_X *14,14*CELL_Y,  al_map_rgb_f(0.5, 0.2, 0.77) );
+    al_draw_text(global_font,al_map_rgb_f(1.0, 1.0, 1.0) , CELL_X*10, CELL_Y*15,0,"1");
+
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.2) , CELL_X, CELL_Y*16,0, "%d", board.actual_ships[1]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.3) , CELL_X*3, CELL_Y*16,0, "%d",board.actual_ships[2]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.4) , CELL_X*6, CELL_Y*16,0, "%d",board.actual_ships[3]);
+    al_draw_textf(global_font,al_map_rgb_f(0.7, 0.6, 0.5) , CELL_X*10, CELL_Y*16,0, "%d",board.actual_ships[4]);
+}
+
 void sendBoard (Socket socket, Board board)
 {
     debug {writeln ("send start"); stdout.flush ();}
@@ -637,9 +668,6 @@ int main (string [] args)
     });
 }
 
-
-
-
 bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
 {
     if (finishButton.inside (x, y))
@@ -717,6 +745,8 @@ bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y)
 
 bool finishPrepareMove (ref Board board)
 {
+    for (int i = 1; i<MAX_LEN + 1;i++)
+                board.actual_ships[i] = 0;
     for (int row = 0; row < ROWS; row++)
         for (int col= 0; col < COLS; col++)
         {
@@ -745,7 +775,7 @@ bool finishPrepareMove (ref Board board)
         foreach (col; 0..COLS)
             b[row][col] = (board.ships[row][col] == 'O');
 
-    int actual_ships [MAX_LEN + 1];
+
     for (int row = 0; row < ROWS; row++)
     {
         for (int col = 0; col < COLS; col++)
@@ -774,7 +804,7 @@ bool finishPrepareMove (ref Board board)
                     count1 = count2;
                 if (count1 <= 4)
                 {
-                    actual_ships[count1]++;
+                    board.actual_ships[count1]++;
                 }
 
                 else
@@ -798,18 +828,20 @@ bool finishPrepareMove (ref Board board)
                 }
            }
     }
+
     foreach (len; 0..MAX_LEN + 1)
     {
-        if (actual_ships[len] < NUM_SHIPS[len])
+
+        if (board.actual_ships[len] < NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+                    board.actual_ships[len], " instead of ", NUM_SHIPS[len]);
             return false;
         }
-        else if(actual_ships[len] > NUM_SHIPS[len])
+        else if(board.actual_ships[len] > NUM_SHIPS[len])
         {
             writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
+                    board.actual_ships[len], " instead of ", NUM_SHIPS[len]);
 
             foreach (row; 0..ROWS)
                 foreach (col; 0..COLS)
@@ -862,9 +894,13 @@ bool finishPrepareMove (ref Board board)
                     }
                 }
             }
+
             return false;
         }
     }
+
+
+
     return true;
 }
 
