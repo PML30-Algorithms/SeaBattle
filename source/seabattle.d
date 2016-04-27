@@ -536,16 +536,25 @@ Board receiveBoard (Socket socket)
     return toBoard (buf[0..len]);
 }
 
-void main_loop ()
+void main_loop (string [] args)
 {
     finishButton = new Button (200, 700, 100, 30,
                                al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
 
-    immutable int PORT_NUMBER = 8080;
+    string IP = "192.168.1.7";
+    if (args.length > 1)
+    {
+        IP = args[1];
+    }
+    int PORT_NUMBER = 8080;
+    if (args.length > 2)
+    {
+        PORT_NUMBER = args[2];
+    }
 
     version (server)
     {
-        auto address = new InternetAddress (PORT_NUMBER);
+        auto address = parseAddress (IP, PORT_NUMBER);
         auto socket = new TcpSocket ();
         socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
         socket.bind (address);
@@ -557,7 +566,7 @@ void main_loop ()
     }
     else version (client)
     {
-        auto address = parseAddress ("127.0.0.1", PORT_NUMBER);
+        auto address = parseAddress (IP, PORT_NUMBER);
         auto socket = new TcpSocket ();
         socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
         socket.connect (address);
@@ -622,7 +631,7 @@ int main (string [] args)
     return al_run_allegro (
     {
         init ();
-        main_loop ();
+        main_loop (args);
         happy_end ();
         return 0;
     });
