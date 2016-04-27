@@ -236,6 +236,11 @@ class Server
 {
     bool gameOver (Board [2] board)
     {
+        if (wins (board[1]) && wins (board[0]))
+        {
+            writeln("Draw");
+            return true;
+        }
         if (wins (board[1]))
         {
             writeln ("Human wins");
@@ -246,7 +251,10 @@ class Server
             writeln ("Computer wins");
             return true;
         }
+
+
         return false;
+
     }
 
     bool processBattleMove (ref Board board, const ref Board newBoard)
@@ -529,9 +537,6 @@ int main (string [] args)
         return 0;
     });
 }
-
-
-
 
 bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
 {
