@@ -5,6 +5,8 @@ Students:
 * Artem Kuzminov
 
 * Dmitry Nefyodov
+ 
+* Daniil Razuvaev
 
 Teachers:
 
