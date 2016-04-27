@@ -396,7 +396,6 @@ struct Board
   int [MAX_LEN+1] actual_ships;
   bool drawAllShips;
   char [ROWS][COLS] light;
-  int actual_ships [MAX_LEN + 1];
 
     string toString () const
     {
