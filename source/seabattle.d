@@ -166,6 +166,19 @@ class HumanPlayer : Player
     }
 }
 
+bool valid (ref Board board, int row, int col)
+{
+    if (row < 10 && col < 10 && row >= 0 && col >= 0)
+    {
+        if (board.ships[row][col] != 'O')
+          return true;
+        else
+          return false;
+    }
+    else
+        return true;
+}
+
 class ComputerPlayer : Player
 {
     int curRow;
@@ -194,36 +207,76 @@ class ComputerPlayer : Player
     {
         initBoard (myBoard);
         initBoard (enemyBoard);
+        for (int len = 1; len <= MAX_LEN; len++)
+              for (int num = 1; num <= 5 - len; num++)
+              {
+                  int rrow = uniform(0, 10);
+                  int rcol = uniform(0, 10);
+                  int rdir = uniform(0, 2);
 
-        myBoard.ships[0][0] = 'O';
-        myBoard.ships[0][1] = 'O';
-        myBoard.ships[0][2] = 'O';
-        myBoard.ships[0][3] = 'O';
+                  if (rdir == 0)
+                  {
+                     bool flag1 = true;
+                     if (rrow + len - 1 >= 10)
+                     {
+                        rrow = uniform(0, 10);
+                        num--;
+                        continue;
+                     }
+                     if (valid(myBoard, rrow - 1, rcol) && valid(myBoard, rrow + len, rcol))
+                        flag1 = true;
+                     else
+                        flag1 = false;
 
-        myBoard.ships[2][0] = 'O';
-        myBoard.ships[2][1] = 'O';
-        myBoard.ships[2][2] = 'O';
 
-        myBoard.ships[3][4] = 'O';
-        myBoard.ships[3][5] = 'O';
-        myBoard.ships[3][6] = 'O';
 
-        myBoard.ships[8][0] = 'O';
-        myBoard.ships[9][0] = 'O';
+                     for (int k = 0; k < len; k++)
+                        if(!valid(myBoard, rrow + k, rcol + 1) || !valid (myBoard, rrow + k, rcol - 1))
+                            flag1 = false;
+                     if(flag1 == true)
+                         for(int t = 0; t < len; t++)
+                         {
+                            myBoard.ships[rrow + t][rcol] = 'O';
+                         }
 
-        myBoard.ships[8][3] = 'O';
-        myBoard.ships[9][3] = 'O';
+                     else
+                     {
+                        rrow = uniform(0, 10);
+                        num--;
+                     }
 
-        myBoard.ships[8][9] = 'O';
-        myBoard.ships[9][9] = 'O';
+                  }
+                  else
+                  {
+                      if (rcol + len - 1 >= 10)
+                      {
+                          rcol = uniform(0, 10);
+                          num--;
+                          continue;
+                      }
+                      bool flag2 = true;
+                      if (valid(myBoard, rrow, rcol - 1) && valid(myBoard, rrow, rcol + len))
+                        flag2 = true;
+                      else
+                        flag2 = false;
+                      for (int k = 0; k < len; k++)
+                        if(!valid(myBoard, rrow + 1, rcol + k) || !valid (myBoard, rrow - 1, rcol + k))
+                              flag2 = false;
+                      if(flag2 == true)
+                         for(int t = 0; t < len; t++)
+                         {
+                            myBoard.ships[rrow ][rcol + t] = 'O';
+                         }
 
-        myBoard.ships[5][5] = 'O';
 
-        myBoard.ships[5][9] = 'O';
 
-        myBoard.ships[6][1] = 'O';
-
-        myBoard.ships[7][7] = 'O';
+                      else
+                      {
+                        rcol = uniform(0, 10);
+                        num--;
+                      }
+                  }
+               }
 
         curRow = 0;
         curCol = 0;
