@@ -5,7 +5,7 @@ import std.algorithm;
 import std.math;
 import std.random;
 import std.conv;
-
+import std.random;
 
 
 import std.datetime;
@@ -173,13 +173,19 @@ class ComputerPlayer : Player
 
     override Board battleMove()
     {
-        enemyBoard.hits[curRow][curCol] = 'Y';
-        curRow++;
-        if (curRow >= ROWS)
+        int shots = 0;
+        while (shots < myBoard.MaxShots())
         {
-            curRow = 0;
-            curCol++;
+            do
+            {
+                    curRow = uniform(0, ROWS);
+                    curCol = uniform(0, COLS);
+            }
+            while ( myBoard.hits[curRow][curCol] == 'X');
+            enemyBoard.hits[curRow][curCol] = 'Y';
+            shots++;
         }
+
 
         return enemyBoard;
     }
@@ -330,19 +336,24 @@ class Server
     {
         stdout.flush ();
         Board [2] board;
-        foreach ( num ;0..2)
+        foreach (num ;0..2)
             board[num] = player[num].prepareMove();
-
+        int savenum = board[1].MaxShots();
         while (!gameOver(board))
         {
-            foreach (num; 0..2)
+            foreach (num ;0..2)
             {
                 auto newBoard = player[num].battleMove();
+                if (num == 1) {
+                        if (!processBattleMove (board[!num], newBoard, savenum))
+                            return;
+                }
+                else
                 if (!processBattleMove (board[!num], newBoard, board[num].MaxShots ()))
                     return;
             }
 
-            foreach (num; 0..2)
+            foreach (num;0..2)
             {
                 player[num].updateMyMove (makeSecretBoard (board[!num]));
                 player[num].updateEnemyMove (board[num]);
@@ -416,12 +427,12 @@ struct Board
         foreach ( row; 0..ROWS)
             foreach (col; 0.. COLS)
             {
-
-                cntship =-1;
+                cntship =0;
                 if (ships[row][col] == 'O')
                 {
                     for (int d=0;d<DIRS; d++)
                     {
+                        cntship = 0;
                         saverow = row;
                         savecol = col;
                         bool flag = false;
@@ -996,6 +1007,7 @@ bool wins (Board board)
     {
         for (int col = 0; col < COLS; col++)
         {
+            /*1000*/
             if (board.ships[row][col] == 'O' && board.hits[row][col] == '.')
                 return false;
         }
