@@ -364,6 +364,12 @@ class Server
 
     }
 
+    bool processPrepareMove (ref Board board, const Board newBoard)
+    {
+        board = newBoard;
+        return finishPrepareMove (board);
+    }
+
     bool processBattleMove (ref Board board, const ref Board newBoard, int MaxShots)
     {
         if (finishBattleMove (newBoard, MaxShots))
@@ -393,7 +399,8 @@ class Server
         stdout.flush ();
         Board [2] board;
         foreach (num ;0..2)
-            board[num] = player[num].prepareMove();
+            if (!processPrepareMove (board[num], player[num].prepareMove ()))
+                return;
         int savenum = board[1].MaxShots();
         while (!gameOver(board))
         {
