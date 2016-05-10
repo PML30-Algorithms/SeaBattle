@@ -231,7 +231,8 @@ class ComputerPlayer : Player
 
 
                      for (int k = 0; k < len; k++)
-                        if(!valid(myBoard, rrow + k, rcol + 1) || !valid (myBoard, rrow + k, rcol - 1))
+                        if(!valid (myBoard, rrow + k, rcol + 1) || !valid (myBoard, rrow + k, rcol - 1) ||
+                           !valid (myBoard, rrow + k, rcol))
                             flag1 = false;
                      if(flag1 == true)
                          for(int t = 0; t < len; t++)
@@ -260,7 +261,8 @@ class ComputerPlayer : Player
                       else
                         flag2 = false;
                       for (int k = 0; k < len; k++)
-                        if(!valid(myBoard, rrow + 1, rcol + k) || !valid (myBoard, rrow - 1, rcol + k))
+                        if(!valid (myBoard, rrow + 1, rcol + k) || !valid (myBoard, rrow - 1, rcol + k) ||
+                           !valid (myBoard, rrow, rcol + k))
                               flag2 = false;
                       if(flag2 == true)
                          for(int t = 0; t < len; t++)
@@ -280,6 +282,7 @@ class ComputerPlayer : Player
 
         curRow = 0;
         curCol = 0;
+        assert (finishPrepareMove (myBoard));
         return myBoard;
     }
 
@@ -361,6 +364,12 @@ class Server
 
     }
 
+    bool processPrepareMove (ref Board board, const Board newBoard)
+    {
+        board = newBoard;
+        return finishPrepareMove (board);
+    }
+
     bool processBattleMove (ref Board board, const ref Board newBoard, int MaxShots)
     {
         if (finishBattleMove (newBoard, MaxShots))
@@ -390,7 +399,8 @@ class Server
         stdout.flush ();
         Board [2] board;
         foreach (num ;0..2)
-            board[num] = player[num].prepareMove();
+            if (!processPrepareMove (board[num], player[num].prepareMove ()))
+                return;
         int savenum = board[1].MaxShots();
         while (!gameOver(board))
         {
