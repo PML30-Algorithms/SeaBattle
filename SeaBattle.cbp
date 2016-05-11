@@ -30,6 +30,7 @@
 				</Compiler>
 			</Target>
 		</Build>
+		<Unit filename="source/new_super_player.d" />
 		<Unit filename="source/seabattle.d" />
 		<Extensions>
 			<code_completion />
