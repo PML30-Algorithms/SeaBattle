@@ -196,7 +196,7 @@ class ComputerPlayer : Player
                     curRow = uniform(0, ROWS);
                     curCol = uniform(0, COLS);
             }
-            while ( myBoard.hits[curRow][curCol] == 'X');
+            while ( enemyBoard.hits[curRow][curCol] == 'X');
             enemyBoard.hits[curRow][curCol] = 'Y';
             shots++;
         }
