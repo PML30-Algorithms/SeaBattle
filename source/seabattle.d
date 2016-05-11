@@ -1,4 +1,4 @@
-module main;
+module source.seabattle;
 
 import std.stdio;
 import std.algorithm;
@@ -27,6 +27,8 @@ import allegro5.allegro_primitives;
 import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
+
+import source.new_super_player;
 
 
 abstract class Player
@@ -757,9 +759,9 @@ void main_loop (string [] args)
     else
     {
         Player humanPlayer = new HumanPlayer ();
-        Player computerPlayer = new ComputerPlayer ();
+        Player newPlayer = new NewSuperPlayer ();
         Server server = new Server ();
-        server.play ([humanPlayer, computerPlayer]);
+        server.play ([humanPlayer, newPlayer]);
     }
 
 //    draw (board);
