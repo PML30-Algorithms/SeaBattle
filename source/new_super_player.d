@@ -49,8 +49,6 @@ class NewSuperPlayer : Player
                 }
                 while ( (enemyBoard.hits[curRow][curCol] == 'X' || enemyBoard.hits[curRow][curCol] == 'Y') && flag < 200);
             }
-            if (step == 2)
-                writeln(curRow, ' ', curCol, '\n');
             enemyBoard.hits[curRow][curCol] = 'Y';
             shots++;
 
