@@ -29,6 +29,7 @@ import allegro5.allegro_ttf;
 
 
 import source.new_super_player;
+/* import source.line_player; */
 
 
 abstract class Player
@@ -158,6 +159,19 @@ class HumanPlayer : Player
     override void updateEnemyMove (Board newMyBoard)
     {
         myBoard = newMyBoard;
+        if(wins_player(myBoard))
+        {
+            if(wins_player(enemyBoard))
+                writeln("Mirror =|");
+            else
+                writeln("Lose =(");
+        }
+        else
+        {
+            if(wins_player(enemyBoard))
+                writeln("Win =)");
+        }
+
         draw ();
     }
 
@@ -296,7 +310,7 @@ class ComputerPlayer : Player
     override void updateMyMove (Board newEnemyBoard)
     {
         enemyBoard = newEnemyBoard;
-    }
+     }
 }
 
 class RemoteNetworkPlayer : Player
@@ -1080,4 +1094,24 @@ bool wins (Board board)
 
 
     return true;
+}
+
+bool wins_player (Board board)
+{
+    int total = 0;
+    foreach (len, num; NUM_SHIPS[])
+    {
+        total += len * num;
+    }
+    int count = 0;
+    for (int row = 0; row < ROWS; row++)
+    {
+        for (int col = 0; col < COLS; col++)
+        {
+            /*1000*/
+            if (board.ships[row][col] == 'O' && board.hits[row][col] == 'X')
+                count ++;
+        }
+    }
+    return count == total;
 }
