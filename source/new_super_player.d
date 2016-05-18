@@ -132,23 +132,39 @@ class NewSuperPlayer : Player
         }
     }
 
+    void get_start(ref int row, ref int col, ref int dir, ref int sum) {
+        if (uniform(0, 2))
+            col = 0;
+        else
+            col = 9;
+        if (uniform(0, 2))
+            row = 0;
+        else
+            row = 9;
+        if (uniform(0, 2)) {
+            col = uniform(0, 10 - sum);
+            dir = 1;
+        }
+        else {
+            row = uniform(0, 10 - sum);
+            dir = 0;
+        }
+    }
 
     override Board prepareMove()
     {
         initBoard (myBoard);
         initBoard (enemyBoard);
 
-        get_ship(myBoard, 4);
-        get_ship(myBoard, 3);
-        get_ship(myBoard, 3);
-
-        for (int len = 1; len < 3; len++)
+        for (int len = 1; len < 5; len++) {
               for (int num = 1; num <= 5 - len; num++)
               {
+
                   int rrow = uniform(0, 10);
                   int rcol = uniform(0, 10);
                   int rdir = uniform(0, 2);
-
+                  if (len > 2)
+                     get_start(rrow, rcol, rdir, len);
                   if (rdir == 0)
                   {
                      bool flag1 = true;
@@ -214,6 +230,7 @@ class NewSuperPlayer : Player
                       }
                   }
                }
+            }
         assert (finishPrepareMove (myBoard));
         return myBoard;
     }
