@@ -1,4 +1,4 @@
-module source.sashok;
+module source.kodukov;
 
 import std.stdio;
 import std.algorithm;

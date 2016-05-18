@@ -10,7 +10,7 @@ import std.random;
 
 import source.seabattle;
 
-class kuzminov : Player
+class ArtemIntelligence : Player
 {
     int curRow,curCol;
 

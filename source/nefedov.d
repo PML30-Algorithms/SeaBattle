@@ -1,4 +1,4 @@
-module source.line_player;
+module source.nefedov;
 
 import std.stdio;
 import std.algorithm;

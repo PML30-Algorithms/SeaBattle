@@ -28,8 +28,10 @@ import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
 
+import source.kodukov;
+import source.kuzminov;
+import source.nefedov;
 import source.new_super_player;
-/* import source.line_player; */
 
 
 abstract class Player
