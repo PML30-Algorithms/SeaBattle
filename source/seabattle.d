@@ -33,6 +33,7 @@ import source.kodukov;
 import source.kuzminov;
 import source.nefedov;
 import source.new_super_player;
+import source.razuvaev;
 
 
 abstract class Player
