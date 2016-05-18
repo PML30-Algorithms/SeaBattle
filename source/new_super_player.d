@@ -156,7 +156,7 @@ class NewSuperPlayer : Player
         initBoard (myBoard);
         initBoard (enemyBoard);
 
-        for (int len = 1; len < 5; len++) {
+        for (int len = 4; len >= 1; len--) {
               for (int num = 1; num <= 5 - len; num++)
               {
 
