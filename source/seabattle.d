@@ -28,6 +28,7 @@ import allegro5.allegro_font;
 import allegro5.allegro_ttf;
 
 
+import source.kazmenko;
 import source.kodukov;
 import source.kuzminov;
 import source.nefedov;
@@ -775,7 +776,7 @@ void main_loop (string [] args)
     else
     {
         Player humanPlayer = new HumanPlayer ();
-        Player newPlayer = new NewSuperPlayer ();
+        Player newPlayer = new AI0 ();
         Server server = new Server ();
         server.play ([humanPlayer, newPlayer]);
     }
