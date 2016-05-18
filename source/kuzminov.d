@@ -3,74 +3,119 @@ module source.kuzminov;
 import std.stdio;
 import std.algorithm;
 import std.math;
-import std.random;
+import std.range;
 import std.conv;
 import std.random;
+import std.typecons;
 
+immutable int DIRS = 4;
+immutable int [DIRS] Drow=[ 0, +1,  0, -1];
+immutable int [DIRS] Dcol=[+1,  0, -1,  0];
 
 import source.seabattle;
 
 class ArtemIntelligence : Player
 {
     int curRow,curCol;
+    int turn = 0;
+
+
+    alias Coord = Tuple!(int, "row", int, "col");
+
 
     override Board battleMove()
     {
-        bool blood = false;
-        int srow,scol;
-
-
-            for (int d=0;d<myBoard.MaxShots(); d++)
-                if (enemyBoard.hits[curRow +Drow[d]][curCol + Dcol[d]]!= 'X')
-                    enemyBoard.hits[curRow +Drow[d]][curCol + Dcol[d]] = 'Y';
-            for (int row = 0;row  < ROWS; row++)
-                for ( int col = 0; col < COLS; col ++)
-                    if ( enemyBoard.hits [row][col] == 'Y' )
-                        enemyBoard.hits[row][col] = 'X';
-
-
-
-        void main_shoot (ref Board enemyBoard, int MaxShots)
-        {
-            int shots;
-            while( blood == false )
+        int shots = myBoard.MaxShots();
+        turn++;
+        Coord [] c;
+        for (int row = 0; row < ROWS; row++)
+            for (int col = 0; col < COLS; col ++)
+                if (enemyBoard.hits[row][col] == 'X' && enemyBoard.ships[row][col] == 'O')
+                    c ~= Coord(row,col);
+        writeln(c);
+        foreach (cell; c)
             {
-
-                if (enemyBoard.hits[curRow][curCol] == 'X' && enemyBoard.ships[curRow][curCol] == 'O')
+                curRow = cell.row;
+                curCol = cell.col;
+                for (int d = 0; d < DIRS && shots > 0;d++)
                 {
-                        blood = true;
-                        break;
+                    if (curRow + Drow[d] < ROWS && curRow + Drow[d] >= 0 && curCol + Dcol[d] < COLS && curCol + Dcol[d] >= 0)
+                    {
+                        if (enemyBoard.hits[curRow+Drow[d]][curCol+Dcol[d]] == '.')
+                        {
+                            enemyBoard.hits[curRow+Drow[d]][curCol+Dcol[d]] = 'Y';
+                            shots--;
+                        }
+                    }
                 }
-                while (shots < myBoard.MaxShots())
-                {
-                        srow = uniform(0, ROWS);
-                        scol = uniform(0, COLS);
-                        shots++;
-                }
-                curRow++;
-                curCol++;
             }
-            if (blood == true)
+
+        {
+            if( shots > 0)
             {
-                for (int d=0;d<MaxShots; d++)
-                if (enemyBoard.hits[curRow +Drow[d]][curCol + Dcol[d]]!= 'X')
-                    enemyBoard.hits[curRow +Drow[d]][curCol + Dcol[d]] = 'Y';
-                for (int row = 0;row  < ROWS; row++)
-                    for ( int col = 0; col < COLS; col ++)
-                        if ( enemyBoard.hits [row][col] == 'Y' )
-                            enemyBoard.hits[row][col] = 'X';
-                blood = false;
+                if (turn == 1)
+                {
+                    enemyBoard.hits[0][0] = 'Y';
+                    enemyBoard.hits[ROWS-1][0] = 'Y';
+                    enemyBoard.hits[0][COLS-1] = 'Y';
+                    enemyBoard.hits[ROWS-1][COLS -1 ] = 'Y';
+                    writeln(":)");
+
+                }
+                else
+                {
+                    for (int  loop = shots ;loop > 0;loop--)
+                    {
+                    curRow = uniform(0, ROWS);
+                    curCol = uniform(0, COLS);
+                    writeln("hello:)");
+                    if (enemyBoard.hits[curRow][curCol] != 'X' && enemyBoard.hits[curRow][curCol] != 'Y')
+                        enemyBoard.hits[curRow][curCol] = 'Y';
+                    else
+                        loop++;
+
+                    }
+                }
             }
         }
-
-
-
-
-        return enemyBoard;
-    }
+        return enemyBoard;    }
 
     void get_ship(ref Board board, int sum) {
+        int col, row;
+        do {
+            if (uniform(0, 2))
+                col = 0;
+            else
+                col = 9;
+            if (uniform(0, 2))
+                row = 0;
+            else
+                row = 9;
+        } while (board.ships[row][col] == 'O');
 
+        if (uniform(0, 2)) {
+            if (row == 9) {
+                for (int i = 10 - sum; i < 10; i++) {
+                    board.ships[i][col] = 'O';
+                }
+            }
+            else {
+                for (int i = 0; i < sum; i++) {
+                    board.ships[i][col] = 'O';
+                }
+            }
+
+        }
+        else {
+             if (col == 9) {
+                for (int i = 10 - sum; i < 10; i++)
+                    board.ships[row][i] = 'O';
+            }
+            else {
+                for (int i = 0; i < sum; i++)
+                    board.ships[row][i] = 'O';
+            }
+        }
 
     }
 
