@@ -775,7 +775,7 @@ void main_loop (string [] args)
     }
     else
     {
-        Player humanPlayer = new HumanPlayer ();
+        Player humanPlayer = new HumanPlayer ();//NewSuperPlayer ();
         Player newPlayer = new AI0 ();
         Server server = new Server ();
         server.play ([humanPlayer, newPlayer]);

@@ -3,11 +3,15 @@ module source.kazmenko;
 import std.algorithm;
 import std.random;
 import std.range;
+import std.stdio;
+import std.typecons;
 
 import source.seabattle;
 
 class AI0 : Player
 {
+    alias Coord = Tuple !(int, q{row}, int, q{col});
+
     bool isValid (int row, int col)
     {
     	return 0 <= row && row < ROWS &&
@@ -21,12 +25,14 @@ class AI0 : Player
 
     override Board battleMove ()
     {
+        debug {writeln ("AI0 battleMove begin");}
         immutable int DIRS = 4;
         immutable int [DIRS] DROW = [ 0, +1,  0, -1];
         immutable int [DIRS] DCOL = [+1,  0, -1,  0];
 
         int shots = min (myBoard.MaxShots (), ROWS * COLS -
             enemyBoard.hits[].map !(x => x[].map !(y => y == 'X').sum).sum);
+        Coord [] c;
         foreach (row; 0..ROWS)
         {
             foreach (col; 0..COLS)
@@ -39,14 +45,24 @@ class AI0 : Player
                         int ncol = col + DCOL[dir];
                         if (isValid (nrow, ncol) && enemyBoard.hits[nrow][ncol] == '.')
                         {
-                            enemyBoard.hits[nrow][ncol] = 'Y';
-                            shots--;
-                            if (shots == 0)
-                            {
-                                goto endBattleMove;
-                            }
+                            c ~= Coord (nrow, ncol);
                         }
                     }
+                }
+            }
+        }
+        randomShuffle (c);
+        foreach (cell; c)
+        {
+            int row = cell.row;
+            int col = cell.col;
+            if (enemyBoard.hits[row][col] == '.')
+            {
+                enemyBoard.hits[row][col] = 'Y';
+                shots--;
+                if (shots == 0)
+                {
+                    break;
                 }
             }
         }
@@ -61,11 +77,13 @@ class AI0 : Player
             }
         }
 endBattleMove:
+        debug {writeln ("AI0 battleMove end");}
         return enemyBoard;
     }
 
     override Board prepareMove ()
     {
+        debug {writeln ("AI0 prepareMove begin");}
         initBoard (myBoard);
         initBoard (enemyBoard);
 
@@ -124,6 +142,7 @@ endBattleMove:
         	}
         }
 
+        debug {writeln ("AI0 prepareMove end");}
         return myBoard;
     }
 
