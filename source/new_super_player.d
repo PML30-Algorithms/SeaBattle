@@ -15,13 +15,45 @@ class NewSuperPlayer : Player
     int curRow = -1;
     int curCol = 4;
     int step = 0;
+    int [] dirx = [-1, 0, 1, 0];
+    int [] diry = [0, -1, 0, 1];
+
+
+    bool correct(int x, int y) {
+        if (x < 0 || y < 0)
+            return false;
+        if (x > 9 || y > 9)
+            return false;
+        if (enemyBoard.hits[x][y] == 'X')
+            return false;
+        if (enemyBoard.hits[x][y] == 'Y')
+            return false;
+        return true;
+    }
 
     override Board battleMove()
     {
         int shots = 0;
-
+        int flag2 = 0;
         while (shots < myBoard.MaxShots())
         {
+            flag2++;
+            bool success = false;
+            for (int i = 0; i < ROWS; i++)
+                for (int j = 0; j < COLS; j++)
+                    if (enemyBoard.ships[i][j] == 'O' && enemyBoard.hits[i][j] == 'X' && !success) {
+                        for (int q = 0; q < 4; q++) {
+                            if (correct(i + dirx[q], j + diry[q])) {
+                                enemyBoard.hits[i + dirx[q]][j + diry[q]] = 'Y';
+                                shots++;
+                                success = true;
+                                break;
+                            }
+                        }
+                    }
+
+            if (success)
+                continue;
             int flag = 0;
             if (step < 2) {
                 curRow++;
@@ -49,9 +81,12 @@ class NewSuperPlayer : Player
                 }
                 while ( (enemyBoard.hits[curRow][curCol] == 'X' || enemyBoard.hits[curRow][curCol] == 'Y') && flag < 200);
             }
-            enemyBoard.hits[curRow][curCol] = 'Y';
-            shots++;
-
+            if (enemyBoard.hits[curRow][curCol] != 'X' && enemyBoard.hits[curRow][curCol] != 'Y') {
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots++;
+            }
+            if (flag2 > 5000)
+                break;
         }
 
 
