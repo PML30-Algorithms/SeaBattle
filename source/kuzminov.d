@@ -25,7 +25,8 @@ class ArtemIntelligence : Player
 
     override Board battleMove()
     {
-        int shots = myBoard.MaxShots();
+        int shots = min (myBoard.MaxShots (), ROWS * COLS -
+ -            enemyBoard.hits[].map !(x => x[].map !(y => y == 'X').sum).sum);
         turn++;
         Coord [] c;
         for (int row = 0; row < ROWS; row++)
