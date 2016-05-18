@@ -775,10 +775,13 @@ void main_loop (string [] args)
     }
     else
     {
-        Player humanPlayer = new HumanPlayer ();//NewSuperPlayer ();
-        Player newPlayer = new AI0 ();
-        Server server = new Server ();
-        server.play ([humanPlayer, newPlayer]);
+        foreach (i; 0..1000)
+        {
+            Player humanPlayer = new ArtemIntelligence ();
+            Player newPlayer = new AI0 ();
+            Server server = new Server ();
+            server.play ([humanPlayer, newPlayer]);
+        }
     }
 
 //    draw (board);
