@@ -25,16 +25,14 @@ class ArtemIntelligence : Player
 
     override Board battleMove()
     {
-        int shots = min (myBoard.MaxShots (), ROWS * COLS -
-            enemyBoard.hits[].map !(x => x[].map !(y => y == 'X').sum).sum);
-//        int shots = myBoard.MaxShots();
+        int shots = myBoard.MaxShots();
         turn++;
         Coord [] c;
         for (int row = 0; row < ROWS; row++)
             for (int col = 0; col < COLS; col ++)
                 if (enemyBoard.hits[row][col] == 'X' && enemyBoard.ships[row][col] == 'O')
                     c ~= Coord(row,col);
-        writeln(c);
+
         foreach (cell; c)
             {
                 curRow = cell.row;
@@ -61,7 +59,7 @@ class ArtemIntelligence : Player
                     enemyBoard.hits[ROWS-1][0] = 'Y';
                     enemyBoard.hits[0][COLS-1] = 'Y';
                     enemyBoard.hits[ROWS-1][COLS -1 ] = 'Y';
-                    writeln(":)");
+
 
                 }
                 else
@@ -70,7 +68,7 @@ class ArtemIntelligence : Player
                     {
                     curRow = uniform(0, ROWS);
                     curCol = uniform(0, COLS);
-                    writeln("hello:)");
+
                     if (enemyBoard.hits[curRow][curCol] != 'X' && enemyBoard.hits[curRow][curCol] != 'Y')
                         enemyBoard.hits[curRow][curCol] = 'Y';
                     else
