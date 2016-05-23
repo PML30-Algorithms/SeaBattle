@@ -1,923 +1,381 @@
-module main;
+module source.razuvaev;
 
 import std.stdio;
 import std.algorithm;
 import std.math;
 import std.random;
 import std.conv;
-
-immutable MaxShots = 4;
-
-import std.datetime;
-import std.concurrency;
-import std.range;
-import std.typecons;
-import core.stdc.stdlib;
-import std.exception;
-import std.socket;
-import std.stdio;
-import std.string;
-pragma (lib, "dallegro5");
-pragma (lib, "allegro");
-
-pragma (lib, "allegro_primitives");
-
-import allegro5.allegro;
-import allegro5.allegro_primitives;
-import allegro5.allegro_font;
-import allegro5.allegro_ttf;
+import std.random;
 
 
+import source.seabattle;
 
-abstract class Player
+class RazuvaevAI : Player
 {
-    Board myBoard;
-    Board enemyBoard;
+    //////START//////
+    int curRow = 0;//
+    int curCol = 0;//
+    int step = 0;  //
+    int flag = 1;  //
+    /////////////////
 
-    Board battleMove();
-    Board prepareMove();
-    void updateEnemyMove (Board newMyBoard);
-    void updateMyMove (Board newEnemyBoard);
-}
-
-class HumanPlayer : Player
-{
-    void moveHuman (alias moveMouse, alias moveKeyboard) (ref Board board, int boardX, int boardY)
+    bool isHit (int row, int col)
     {
-        bool local_finished = false;
-        while (!local_finished)
+        if ((row>=0)&&(col>=0)&&(row<=9)&&(col<=9))
         {
-            draw ();
-
-            ALLEGRO_EVENT current_event;
-            al_wait_for_event (event_queue, &current_event);
-
-            switch (current_event.type)
-            {
-                case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                    happy_end ();
-                    break;
-
-                case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
-                    draw ();
-                    break;
-
-                case ALLEGRO_EVENT_KEY_DOWN:
-
-                    int keycode = current_event.keyboard.keycode;
-
-                    if (moveKeyboard (board, keycode))
-                    {
-                        local_finished = true;
-                    }
-                    break;
-
-                case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-
-                    int x = current_event.mouse.x;
-                    int y = current_event.mouse.y;
-
-                    if (moveMouse (board, boardX, boardY, x, y))
-                    {
-                        local_finished = true;
-                    }
-                    break;
-
-                default:
-                    break;
-            }
+            //writeln("API: isHit: DONT SEACH:");
+            //write  ("            row = ");writeln(row);
+            //write  ("            col = ");writeln(col);
+            return (enemyBoard.hits[row][col] == 'X' && enemyBoard.ships[row][col] == 'O');
         }
+        else
+            return false;
     }
-
-    void draw ()
+    bool isNull (int row, int col)
     {
-        myBoard.drawAllShips = true;
-        enemyBoard.drawAllShips = false;
-
-        al_clear_to_color (al_map_rgb_f (128,128,128));
-        drawBoard (myBoard, MY_BOARD_X, MY_BOARD_Y);
-        drawBoard (enemyBoard, ENEMY_BOARD_X, ENEMY_BOARD_Y);
-        finishButton.draw ();
-        al_flip_display ();
+        if ((row>=0)&&(col>=0)&&(row<=9)&&(col<=9))
+        {
+            return (enemyBoard.hits[row][col] == '.');
+        }
+        else
+            return 0;
     }
 
     override Board battleMove()
     {
-        draw ();
-        moveHuman !(moveMouseBattle, moveKeyboardBattle) (enemyBoard, ENEMY_BOARD_X, ENEMY_BOARD_Y);
-        draw ();
-        return enemyBoard;
-    }
-
-    override Board prepareMove()
-    {
-        initBoard (myBoard);
-        initBoard (enemyBoard);
-
-        myBoard.ships[0][0] = 'O';
-        myBoard.ships[0][1] = 'O';
-        myBoard.ships[0][2] = 'O';
-        myBoard.ships[0][3] = 'O';
-
-        myBoard.ships[2][0] = 'O';
-        myBoard.ships[2][1] = 'O';
-        myBoard.ships[2][2] = 'O';
-
-        myBoard.ships[3][4] = 'O';
-        myBoard.ships[3][5] = 'O';
-        myBoard.ships[3][6] = 'O';
-
-        myBoard.ships[8][0] = 'O';
-        myBoard.ships[9][0] = 'O';
-
-        myBoard.ships[8][3] = 'O';
-        myBoard.ships[9][3] = 'O';
-
-        myBoard.ships[8][9] = 'O';
-        myBoard.ships[9][9] = 'O';
-
-        myBoard.ships[5][5] = 'O';
-
-        myBoard.ships[5][9] = 'O';
-
-        myBoard.ships[6][1] = 'O';
-
-        myBoard.ships[7][7] = 'O';
-
-        draw ();
-        moveHuman !(moveMousePrepare, moveKeyboardPrepare) (myBoard, MY_BOARD_X, MY_BOARD_Y);
-        draw ();
-        return myBoard;
-    }
-
-    override void updateEnemyMove (Board newMyBoard)
-    {
-        myBoard = newMyBoard;
-        draw ();
-    }
-
-    override void updateMyMove (Board newEnemyBoard)
-    {
-        enemyBoard = newEnemyBoard;
-        draw ();
-    }
-}
-
-class ComputerPlayer : Player
-{
-    int curRow;
-    int curCol;
-
-    override Board battleMove()
-    {
+        int shots = 0;
+        write("API: FLAG = ");writeln(flag);
+        while ((shots < myBoard.MaxShots())&&(flag == 1))
+        {
         enemyBoard.hits[curRow][curCol] = 'Y';
-        curRow++;
-        if (curRow >= ROWS)
-        {
-            curRow = 0;
-            curCol++;
+        shots++;
+            if (curRow%2==0){
+                curCol += 2;
+                if (curCol >= COLS){
+                    curCol = 1;
+                    curRow++;
+                }
+            }
+            else
+            if (curRow%2==1)
+            {
+                curCol += 2;
+                if (curCol >= COLS)
+                {
+                    if (curRow+1 < ROWS){
+                        curCol = 0;
+                        curRow++;
+                    }
+                    else
+                    {
+                        flag = 2;
+                        curRow = 0;
+                        curCol = 0;
+                    }
+                }
+            }
         }
 
-        return enemyBoard;
+        //  POISK 4Palubnika
+        int dead4 = -1;
+        int flalalag = 1;
+        if (flag == 2)
+        {
+        dead4 = 0;
+        }
+        write("API: FLAG = ");writeln(flag);
+        while ((shots < myBoard.MaxShots())&&(flag == 2)&&(flalalag))/////////////////////////////////////////////////////////////
+        {   writeln("API: POISK 4Palubnika: Started");
+            write("API: POISK 4Palubnika: shots = ");writeln(shots);
+            write("API: POISK 4Palubnika: curRow = ");writeln(curRow);
+            write("API: POISK 4Palubnika: curCol = ");writeln(curCol);
+            //curCol - stolbci
+
+            writeln("API: POISK 4Palubnika: ROW SEACH");
+            write("API: FLAG = ");writeln(flag);
+            if ((shots < myBoard.MaxShots())&&isHit(curRow-1, curCol) && isNull(curRow, curCol) && isHit(curRow+1, curCol))//poisk v stroke
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: NO SEACHED!");
+            }
+            if ((shots < myBoard.MaxShots())&&isNull(curRow-1, curCol) && isHit(curRow, curCol) && isHit(curRow+1, curCol))//poisk v stroke
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: NO SEACHED!");
+            }
+            if ((shots < myBoard.MaxShots())&&isHit(curRow-1, curCol) && isHit(curRow, curCol) && isNull(curRow+1, curCol))//poisk v stroke
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: ROW SEACH: NO SEACHED!");
+            }
+            writeln("API: POISK 4Palubnika: COL SEACH");
+            if ((shots < myBoard.MaxShots())&& isHit(curRow, curCol-1) &&
+                isNull(curRow, curCol) && isHit(curRow, curCol+1))//poisk v stolbce
+            {
+                writeln("API: POISK 4Palubnika: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: COL SEACH: NO SEACHED!");
+            }
+            if ((shots < myBoard.MaxShots())&& isNull(curRow, curCol-1) &&
+                isHit(curRow, curCol) && isHit(curRow, curCol+1))//poisk v stolbce
+            {
+                writeln("API: POISK 4Palubnika: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: COL SEACH: NO SEACHED!");
+            }
+            if ((shots < myBoard.MaxShots())&& isHit(curRow, curCol-1) &&
+                isHit(curRow, curCol) && isNull(curRow, curCol+1))//poisk v stolbce
+            {
+                writeln("API: POISK 4Palubnika: SEACHED!");
+                enemyBoard.hits[curRow][curCol] = 'Y';
+                shots ++;
+            }
+            else
+            {
+                writeln("API: POISK 4Palubnika: COL SEACH: NO SEACHED!");
+            }
+              // Go...
+            if(curCol>10){//esli stolbec
+                curCol = 0;//stolbec = 0
+                curRow ++;//perevod stroki
+            }
+            else
+            {
+                curCol ++;
+            }
+            for(int i = 0;i<10; i++){
+                for(int j = 0;j<10; j++){
+                    if ((isHit(i-1,j)&&isNull(i,j)&&isHit(i+1,j)&&isHit(i+2,j))||
+                        (isHit(i,j-1)&&isNull(i,j)&&isHit(i,j+1)&&isHit(i,j+2)))
+                    {
+                        enemyBoard.hits[i][j] = 'Y';
+                        shots ++;
+                        writeln("API: POISK 4Palubnika: dead4?");
+                    }
+                }
+            }
+            if(curRow>=10)//esli stroka
+            {
+                curRow = 0;
+                curCol = 0;
+                //flalalag = 0;
+                if (API_GO_2to3()){
+                    flag = 3;
+                    flalalag = 0;
+                }
+            }
+
+
+
+
+            if(shots >= myBoard.MaxShots())
+                flalalag = 0;
+
+        }
+        write("API: FLAG = ");writeln(flag);
+        while ((shots < myBoard.MaxShots())&&(flag == 3)){//////////////////////////////////////////////////////////////////////
+            writeln("API: Killing 4Palubnika: Started!");
+            for(int i = 0;i<10; i++)
+            {
+                for(int j = 0;j<10; j++)
+                    {
+                    if ((isHit(i-1,j)&&isHit(i,j)&&isHit(i+1,j)&&isHit(i+2,j))||
+                        (isHit(i,j-1)&&isHit(i,j)&&isHit(i,j+1)&&isHit(i,j+2)))
+                            {
+                                dead4 = 1;
+                                writeln("API: Killing 4Palubnika: dead4!!!");
+                                write("API: FLAG = ");writeln(flag);
+                            }
+                    }
+            }
+            if(dead4 == 1)
+            {
+                write("API: FLAG = ");writeln(flag);
+                flag = 4;
+                writeln("API: THE END");
+                write("API: FLAG = ");writeln(flag);
+            }
+        }
+        while ((shots < myBoard.MaxShots())&&(flag == 4)){
+        }
+    return enemyBoard;
     }
+    bool API_GO_2to3(){
+        writeln("API: API_GO_2to3...");
+            for(int i = 0;i<10; i++)
+            {
+                for(int j = 0;j<10; j++)
+                    {
+                    if ((isHit(i-1,j)&&isNull(i,j)&&isHit(i+1,j))||
+                        (isHit(i,j-1)&&isNull(i,j)&&isHit(i,j+1))||
+                        (isNull(i-1,j)&&isHit(i,j)&&isHit(i+1,j))||
+                        (isNull(i,j-1)&&isHit(i,j)&&isHit(i,j+1))||
+                        (isHit(i-1,j)&&isHit(i,j)&&isNull(i+1,j))||
+                        (isHit(i,j-1)&&isHit(i,j)&&isNull(i,j+1)))
+                            {
+                                return false;
+                            }
+                    }
+            }
+        return true;
+    }
+    void get_ship(ref Board board, int sum) {
+
+        int col, row;
+        do {
+            if (uniform(0, 2))
+                col = 0;
+            else
+                col = 9;
+            if (uniform(0, 2))
+                row = 0;
+            else
+                row = 9;
+        } while (board.ships[row][col] == 'O');
+
+        if (uniform(0, 2)) {
+            if (row == 9) {
+                for (int i = 10 - sum; i < 10; i++) {
+                    board.ships[i][col] = 'O';
+                }
+            }
+            else {
+                for (int i = 0; i < sum; i++) {
+                    board.ships[i][col] = 'O';
+                }
+            }
+
+        }
+        else {
+             if (col == 9) {
+                for (int i = 10 - sum; i < 10; i++)
+                    board.ships[row][i] = 'O';
+            }
+            else {
+                for (int i = 0; i < sum; i++)
+                    board.ships[row][i] = 'O';
+            }
+        }
+    }
+
 
     override Board prepareMove()
     {
         initBoard (myBoard);
         initBoard (enemyBoard);
 
-        myBoard.ships[0][0] = 'O';
-        myBoard.ships[0][1] = 'O';
-        myBoard.ships[0][2] = 'O';
-        myBoard.ships[0][3] = 'O';
-
-        myBoard.ships[2][0] = 'O';
-        myBoard.ships[2][1] = 'O';
-        myBoard.ships[2][2] = 'O';
-
-        myBoard.ships[3][4] = 'O';
-        myBoard.ships[3][5] = 'O';
-        myBoard.ships[3][6] = 'O';
-
-        myBoard.ships[8][0] = 'O';
-        myBoard.ships[9][0] = 'O';
-
-        myBoard.ships[8][3] = 'O';
-        myBoard.ships[9][3] = 'O';
-
-        myBoard.ships[8][9] = 'O';
-        myBoard.ships[9][9] = 'O';
-
-        myBoard.ships[5][5] = 'O';
-
-        myBoard.ships[5][9] = 'O';
-
-        myBoard.ships[6][1] = 'O';
-
-        myBoard.ships[7][7] = 'O';
-
-        curRow = 0;
-        curCol = 0;
-        return myBoard;
-    }
-
-    override void updateEnemyMove (Board newMyBoard)
-    {
-        myBoard = newMyBoard;
-    }
-
-    override void updateMyMove (Board newEnemyBoard)
-    {
-        enemyBoard = newEnemyBoard;
-    }
-}
-
-class RemoteNetworkPlayer : Player
-{
-    Socket socket;
-
-    this (Socket listeningSocket)
-    {
-        socket = listeningSocket.accept ();
-    }
-
-    ~this ()
-    {
-        socket.shutdown (SocketShutdown.BOTH);
-        socket.close ();
-    }
-
-    override Board battleMove()
-    {
-        enemyBoard = receiveBoard (socket);
-        return enemyBoard;
-    }
-
-    override Board prepareMove()
-    {
-        initBoard (myBoard);
-        initBoard (enemyBoard);
-        myBoard = receiveBoard (socket);
-        return myBoard;
-    }
-
-    override void updateEnemyMove (Board newMyBoard)
-    {
-        myBoard = newMyBoard;
-        sendBoard (socket, myBoard);
-    }
-
-    override void updateMyMove (Board newEnemyBoard)
-    {
-        enemyBoard = newEnemyBoard;
-        sendBoard (socket, enemyBoard);
-    }
-}
-
-class Server
-{
-    bool gameOver (Board [2] board)
-    {
-        if (wins (board[1]))
-        {
-            writeln ("Human wins");
-            return true;
-        }
-        if (wins (board[0]))
-        {
-            writeln ("Computer wins");
-            return true;
-        }
-        return false;
-    }
-
-    bool processBattleMove (ref Board board, const ref Board newBoard)
-    {
-        if (finishBattleMove (newBoard))
-        {
-            foreach (row; 0..ROWS)
-                foreach (col; 0..COLS)
-                    if (newBoard.hits[row][col] == 'Y')
-                        board.hits[row][col] = 'X';
-            return true;
-        }
-        return false;
-    }
-
-    Board makeSecretBoard (const ref Board board)
-    {
-
-        Board secretBoard = board;
-        foreach(row;0..ROWS)
-            foreach(col;0..COLS)
-                if (board.ships[row][col] == 'O' && board.hits[row][col] != 'X')
-                    secretBoard.ships[row][col] = '.';
-        return secretBoard;
-    }
-
-    void play( Player [2] player )
-    {
-        stdout.flush ();
-        Board [2] board;
-        foreach ( num ;0..2)
-            board[num] = player[num].prepareMove();
-
-        while (!gameOver(board))
-        {
-            foreach (num; 0..2)
-            {
-                auto newBoard = player[num].battleMove();
-                if (!processBattleMove (board[!num], newBoard))
-                    return;
-            }
-
-            foreach (num; 0..2)
-            {
-                player[num].updateMyMove (makeSecretBoard (board[!num]));
-                player[num].updateEnemyMove (board[num]);
-            }
-        }
-    }
-}
-
-
-class Button
-{
-    int x,y,width,height;
-    ALLEGRO_COLOR backgroundColor;
-    ALLEGRO_COLOR nameColor;
-    string name;
-
-    this (int x_, int y_, int width_, int height_,
-          ALLEGRO_COLOR backgroundColor_, ALLEGRO_COLOR nameColor_, string name_)
-    {
-        x = x_;
-        y = y_;
-        width = width_;
-        height = height_;
-        backgroundColor = backgroundColor_;
-        nameColor = nameColor_;
-        name = name_;
-    }
-    bool inside (int px, int py)
-    {
-        return (x<=px && px<=x+width && y<=py && py<=y+height);
-
-    }
-
-    void draw ()
-    {
-
-        al_draw_filled_rectangle(x,y,x+width,y+height, backgroundColor);
-        al_draw_text (global_font, nameColor, x + width * 0.5, y + (height - FONT_HEIGHT) * 0.5,
-                      ALLEGRO_ALIGN_CENTRE, name.toStringz);
-
-    }
-}
-
-Button finishButton;
-
-struct Board
-{
-  char [ROWS][COLS] hits;
-  char [ROWS][COLS] ships;
-  bool drawAllShips;
-  char [ROWS][COLS] light;
-
-    string toString () const
-    {
-        string res;
-        foreach (row; 0..ROWS)
-            res ~= hits[row];
-        foreach (row; 0..ROWS)
-            res ~= ships[row];
-        return res;
-    }
-}
-
-Board toBoard (const (char) [] s)
-{
-    Board res;
-    foreach (row; 0..ROWS)
-        foreach (col; 0..COLS)
-        {
-            res.hits[row][col] = s[0];
-            s = s[1..$];
-        }
-    foreach (row; 0..ROWS)
-        foreach (col; 0..COLS)
-        {
-            res.ships[row][col] = s[0];
-            s = s[1..$];
-        }
-    return res;
-}
-
-immutable int MY_BOARD_X = 50;
-immutable int MY_BOARD_Y = 50;
-
-immutable int ENEMY_BOARD_X = 550;
-immutable int ENEMY_BOARD_Y = 50;
-
-immutable int CELL_X = 40;
-immutable int CELL_Y = 40;
-
-immutable int ROWS = 10;
-immutable int COLS = 10;
-
-
-immutable int DIRS = 4;
-
-immutable int [DIRS] Drow=[0,+1,+1,+1];
-immutable int [DIRS] Dcol=[+1,+1,0,-1];
-
-immutable int MAX_LEN = 4;
-immutable int NUM_SHIPS [MAX_LEN + 1] = [0, 4, 3, 2, 1];
-
-immutable int MAX_X = 1000;
-immutable int MAX_Y = 1000;
-
-immutable int FONT_HEIGHT = 24;
-
-ALLEGRO_DISPLAY * display;
-ALLEGRO_EVENT_QUEUE * event_queue;
-ALLEGRO_FONT * global_font;
-
-void init ()
-{
-    enforce (al_init ());
-    enforce (al_init_primitives_addon ());
-    enforce (al_install_mouse ());
-    enforce (al_install_keyboard ());
-    al_init_font_addon ();
-    enforce (al_init_ttf_addon ());
-
-    display = al_create_display (MAX_X, MAX_Y);
-    enforce (display);
-
-    event_queue = al_create_event_queue ();
-    enforce (event_queue);
-
-    global_font = al_load_ttf_font ("Inconsolata-Regular.ttf", FONT_HEIGHT, 0);
-
-    al_register_event_source (event_queue, al_get_mouse_event_source ());
-    al_register_event_source (event_queue, al_get_keyboard_event_source ());
-    al_register_event_source (event_queue, al_get_display_event_source (display));
-}
-
-
-void initBoard (ref Board board)
-{
-    for (int row = 0; row < ROWS; row++)
-    {
-        for (int col = 0; col < COLS; col++)
-        {
-            board.hits[row][col] = '.';
-        }
-    }
-    for (int row = 0; row < ROWS; row++)
-    {
-        for (int col = 0; col < COLS; col++)
-        {
-            board.ships[row][col] = '.';
-        }
-    }
-    board.drawAllShips = false;
-}
-
-void drawBoard (const ref Board board, int boardX, int boardY)
-{
-    for (int row = 0; row < ROWS; row++)
-        for (int col = 0; col < COLS; col++)
-            drawCell (board, boardX, boardY, row, col, board.hits[row][col], board.ships[row][col], board.light[row][col]);
-}
-
-
-
-void drawCell (const ref Board board, int boardX, int boardY, int row, int col, char hits, char ships, char light)
-{
-    int curx = boardX + col * CELL_X;
-    int cury = boardY + row * CELL_Y;
-
-    double CELL_SCALE = min (CELL_X, CELL_Y);
-    al_draw_rectangle(curx-1,cury-1,curx + CELL_X-1,cury + CELL_Y-1, al_map_rgb_f(0,255,255),0.05* CELL_SCALE);
-    if (light == '+')
-    {
-        al_draw_filled_rectangle (curx, cury, curx + CELL_X, cury + CELL_Y,
-                                          al_map_rgb_f (0.8, 0.3, 0.5));
-    }
-    if (ships == 'O' && (hits == 'X' || board.drawAllShips))
-        al_draw_circle(curx + 0.5*CELL_X, cury + 0.5*CELL_Y, 0.375* CELL_SCALE, al_map_rgb_f(0,153,0),0.1* CELL_SCALE);
-    if (hits == 'X')
-    {
-        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
-        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(0,0,153),0.1* CELL_SCALE);
-    }
-    if (hits == 'Y')
-    {
-        al_draw_line(curx+ 0.2*CELL_X,cury + 0.2*CELL_Y, curx + 0.8*CELL_X, cury + 0.8*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
-        al_draw_line(curx+ 0.2*CELL_X,cury + 0.8*CELL_Y, curx + 0.8*CELL_X, cury + 0.2*CELL_Y, al_map_rgb_f(153,0,0),0.1* CELL_SCALE);
-    }
-
-}
-
-void sendBoard (Socket socket, Board board)
-{
-    debug {writeln ("send start"); stdout.flush ();}
-    auto s = board.toString ();
-    int left = 0;
-    while (left < 200)
-    {
-        int len = socket.send (s);
-        debug {writeln ("send actual ", len); stdout.flush ();}
-        left += len;
-        s = s[len..$];
-    }
-    assert (left == 200);
-    debug {writeln ("send finish ", left); stdout.flush ();}
-}
-
-Board receiveBoard (Socket socket)
-{
-    debug {writeln ("receive start ", socket.handle ()); stdout.flush ();}
-    static char [] [socket_t] buf;
-    static int [socket_t] left;
-    auto handle = socket.handle ();
-    if (handle !in buf)
-    {
-        buf[handle] = new char [1024];
-        left[handle] = 0;
-    }
-    while (left[handle] < 200)
-    {
-        int len = socket.receive (buf[handle][left[handle]..$]);
-        debug {writeln ("receive actual ", len); stdout.flush ();}
-        left[handle] += len;
-    }
-    auto res = buf[handle][0..200].dup;
-    for (int i = 200; i < left[handle]; i++)
-        buf[handle][i - 200] = buf[handle][i];
-    left[handle] -= 200;
-    debug {writeln ("receive finish ", left[handle]); stdout.flush ();}
-    return toBoard (res);
-}
-
-void main_loop (string [] args)
-{
-    finishButton = new Button (200, 700, 100, 30,
-                               al_map_rgb_f (1.0, 0.0, 0.0), al_map_rgb_f (1.0, 1.0, 1.0), "End Turn");
-
-
-    string IP = "127.0.0.1";
-    if (args.length > 2)
-    {
-        IP = args[2];
-    }
-    ushort PORT_NUMBER = 80;
-    if (args.length > 3)
-    {
-        PORT_NUMBER = to!ushort(args[3]);
-    }
-
-    if (args.length > 1 && args[1] == "-server")
-    {
-        auto address = parseAddress (IP, PORT_NUMBER);
-        auto socket = new TcpSocket ();
-        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
-        socket.bind (address);
-        socket.listen (1);
-        Player remoteNetworkPlayer0 = new RemoteNetworkPlayer (socket);
-        Player remoteNetworkPlayer1 = new RemoteNetworkPlayer (socket);
-        Server server = new Server ();
-        server.play ([remoteNetworkPlayer0, remoteNetworkPlayer1]);
-    }
-    else if (args.length > 1 && args[1] == "-client")
-    {
-        auto address = parseAddress (IP, PORT_NUMBER);
-        auto socket = new TcpSocket ();
-        socket.setOption (SocketOptionLevel.TCP, SocketOption.TCP_NODELAY, true);
-        socket.connect (address);
-
-        Player humanPlayer = new HumanPlayer ();
-        sendBoard (socket, humanPlayer.prepareMove ());
-        while (true)
-        {
-            sendBoard (socket, humanPlayer.battleMove ());
-            humanPlayer.updateMyMove (receiveBoard (socket));
-            humanPlayer.updateEnemyMove (receiveBoard (socket));
-        }
-    }
-    else
-    {
-        Player humanPlayer = new HumanPlayer ();
-        Player computerPlayer = new ComputerPlayer ();
-        Server server = new Server ();
-        server.play ([humanPlayer, computerPlayer]);
-    }
-
-//    draw (board);
-    while (true)
-    {
-        ALLEGRO_EVENT current_event;
-        al_wait_for_event (event_queue, &current_event);
-
-        switch (current_event.type)
-        {
-             case ALLEGRO_EVENT_DISPLAY_SWITCH_IN:
-//                draw (board);
-                break;
-
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                happy_end ();
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
-void happy_end ()
-{
-    al_destroy_display (display);
-    al_destroy_event_queue (event_queue);
-    al_destroy_font (global_font);
-
-    al_shutdown_ttf_addon ();
-    al_shutdown_font_addon ();
-    al_shutdown_primitives_addon ();
-
-    exit (EXIT_SUCCESS);
-}
-
-
-
-int main (string [] args)
-{
-
-    return al_run_allegro (
-    {
-        init ();
-        main_loop (args);
-        happy_end ();
-        return 0;
-    });
-}
-
-
-
-
-bool moveMouseBattle (ref Board board, int boardX, int boardY, int x, int y)
-{
-    if (finishButton.inside (x, y))
-    {
-        return finishBattleMove (board);
-    }
-
-    if (x < boardX || boardX + ROWS *CELL_X <= x)
-        return false;
-    if (y < boardY || boardY + COLS *CELL_Y <= y)
-        return false;
-    int row = (y - boardY) / CELL_Y;
-    int col = (x - boardX) / CELL_X;
-
-    if (board.hits[row][col] == 'Y')   board.hits[row][col] = '.';
-    else
-        if (board.hits[row][col] == '.')   board.hits[row][col] = 'Y';
-
-
-    return false;
-}
-
-bool finishBattleMove (const ref Board board)
-{
-    int cnt = 0;
-    foreach (row; 0..ROWS)
-        foreach (col; 0..COLS)
-        if (board.hits[row][col] == 'Y')
-            cnt ++;
-
-    if (cnt > MaxShots)
-    {
-        writeln("LESS SHIPS");
-        return false;
-    }
-
-    if (cnt < 1)
-    {
-        writeln("MORE SHIPS");
-        return false;
-    }
-
-    return true;
-}
-
-bool moveKeyboardBattle (ref Board board, int keycode)
-{
-    if (keycode == ALLEGRO_KEY_ENTER)
-    {
-        return finishBattleMove (board);
-    }
-    return false;
-}
-
-bool moveMousePrepare (ref Board board, int boardX, int boardY, int x, int y)
-{
-    if (finishButton.inside (x, y))
-    {
-        return finishPrepareMove (board);
-    }
-
-    if (x < boardX || boardX + ROWS *CELL_X <= x)
-        return false;
-    if (y < boardY || boardY + COLS *CELL_Y <= y)
-        return false;
-    int row = (y - boardY) / CELL_Y;
-    int col = (x - boardX) / CELL_X;
-
-    if (board.ships[row][col] == 'O') board.ships[row][col] = '.';
-    else
-      if (board.ships[row][col] == '.')  board.ships[row][col] = 'O';
-
-    return false;
-}
-
-bool finishPrepareMove (ref Board board)
-{
-    for (int row = 0; row < ROWS; row++)
-        for (int col= 0; col < COLS; col++)
-        {
-            board.light[row][col] = '-';
-        }
-
-
-    for (int row = 0; row < ROWS - 1; row++)
-        for (int col= 0; col < COLS - 1; col++)
-        {
-
-            if ((board.ships[row][col] == 'O') + (board.ships[row + 1][col] == 'O') +
-                (board.ships[row][col + 1] == 'O') + (board.ships[row + 1][col + 1] == 'O') >= 3)
+        get_ship(myBoard, 4);
+        get_ship(myBoard, 3);
+        get_ship(myBoard, 3);
+
+        for (int len = 1; len < 3; len++)
+              for (int num = 1; num <= 5 - len; num++)
               {
-                  board.light[row][col] = '+';
-                  board.light[row + 1][col] = '+';
-                  board.light[row][col + 1] = '+';
-                  board.light[row + 1][col + 1] = '+';
+                  int rrow = uniform(0, 10);
+                  int rcol = uniform(0, 10);
+                  int rdir = uniform(0, 2);
 
-                  writeln("Your ships touch each other");
-                  return false;
-              }
-        }
-    bool [ROWS] [COLS] b;
-    foreach (row; 0..ROWS)
-        foreach (col; 0..COLS)
-            b[row][col] = (board.ships[row][col] == 'O');
+                  if (rdir == 0)
+                  {
+                     bool flag1 = true;
+                     if (rrow + len - 1 >= 10)
+                     {
+                        rrow = uniform(0, 10);
+                        num--;
+                        continue;
+                     }
+                     if (valid(myBoard, rrow - 1, rcol) && valid(myBoard, rrow + len, rcol))
+                        flag1 = true;
+                     else
+                        flag1 = false;
 
-    int actual_ships [MAX_LEN + 1];
-    for (int row = 0; row < ROWS; row++)
-    {
-        for (int col = 0; col < COLS; col++)
-            if (b[row][col])
-            {
-                b[row][col] = false;
-                int count1 = 1, count2 = 1;
-                for (int x = row + 1; x < ROWS; x++)
-                    if(b[x][col])
-                    {
-                        count1++;
-                        b[x][col] = false;
 
-                    }
-                    else break;
-                for (int y = col + 1; y < COLS; y++)
-                    if(b[row][y])
-                    {
-                        count2++;
-                        b[row][y] = false;
-                    }
 
-                    else break;
+                     for (int k = 0; k < len; k++)
+                        if(!valid (myBoard, rrow + k, rcol + 1) || !valid (myBoard, rrow + k, rcol - 1) ||
+                           !valid (myBoard, rrow + k, rcol))
+                            flag1 = false;
+                     if(flag1 == true)
+                         for(int t = 0; t < len; t++)
+                         {
+                            myBoard.ships[rrow + t][rcol] = 'O';
+                         }
 
-                if (count1 == 1)
-                    count1 = count2;
-                if (count1 <= 4)
-                {
-                    actual_ships[count1]++;
-                }
+                     else
+                     {
+                        rrow = uniform(0, 10);
+                        num--;
+                     }
 
-                else
-                {
-                    board.light[row][col] = '+';
-                    for (int x = row + 1; x < ROWS; x++)
-                        if(board.ships[x][col] == 'O')
-                        {
-                            board.light[x][col] = '+';
-                        }
-                        else break;
-                    for (int y = col + 1; y < COLS; y++)
-                        if(board.ships[row][y] == 'O')
-                        {
-                            board.light[row][y] = '+';
-                        }
-                        else break;
+                  }
+                  else
+                  {
+                      if (rcol + len - 1 >= 10)
+                      {
+                          rcol = uniform(0, 10);
+                          num--;
+                          continue;
+                      }
+                      bool flag2 = true;
+                      if (valid(myBoard, rrow, rcol - 1) && valid(myBoard, rrow, rcol + len))
+                        flag2 = true;
+                      else
+                        flag2 = false;
+                      for (int k = 0; k < len; k++)
+                        if(!valid (myBoard, rrow + 1, rcol + k) || !valid (myBoard, rrow - 1, rcol + k) ||
+                           !valid (myBoard, rrow, rcol + k))
+                              flag2 = false;
+                      if(flag2 == true)
+                         for(int t = 0; t < len; t++)
+                         {
+                            myBoard.ships[rrow ][rcol + t] = 'O';
+                         }
 
-                    writeln ("Big ship");
-                    return false;
-                }
-           }
+
+
+                      else
+                      {
+                        rcol = uniform(0, 10);
+                        num--;
+                      }
+                  }
+               }
+        assert (finishPrepareMove (myBoard));
+        return myBoard;
     }
-    foreach (len; 0..MAX_LEN + 1)
+
+    override void updateEnemyMove (Board newMyBoard)
     {
-        if (actual_ships[len] < NUM_SHIPS[len])
-        {
-            writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
-            return false;
-        }
-        else if(actual_ships[len] > NUM_SHIPS[len])
-        {
-            writeln("Number of ships of length ", len, " is ",
-                    actual_ships[len], " instead of ", NUM_SHIPS[len]);
-
-            foreach (row; 0..ROWS)
-                foreach (col; 0..COLS)
-                    b[row][col] = (board.ships[row][col] == 'O');
-
-
-            for (int row = 0; row < ROWS; row++)
-            {
-                for (int col = 0; col < COLS; col++)
-                {
-                    if (b[row][col])
-                    {
-                        b[row][col] = false;
-                        int count1 = 1, count2 = 1;
-                        for (int x = row + 1; x < ROWS; x++)
-                            if(b[x][col])
-                            {
-                                count1++;
-                                b[x][col] = false;
-
-                            }
-                            else break;
-                        for (int y = col + 1; y < COLS; y++)
-                            if(b[row][y])
-                            {
-                                count2++;
-                                b[row][y] = false;
-                            }
-
-                            else break;
-
-                        if (count1 == 1)
-                            count1 = count2;
-                        if (count1 == len)
-                        {
-                            board.light[row][col] = '+';
-                            for (int x = row + 1; x < ROWS; x++)
-                                if(board.ships[x][col] == 'O')
-                                {
-                                    board.light[x][col] = '+';
-                                }
-                                else break;
-                            for (int y = col + 1; y < COLS; y++)
-                                if(board.ships[row][y] == 'O')
-                                {
-                                    board.light[row][y] = '+';
-                                }
-                                else break;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
+        myBoard = newMyBoard;
     }
-    return true;
-}
 
-bool moveKeyboardPrepare (ref Board board, int keycode)
-{
-    if (keycode == ALLEGRO_KEY_ENTER)
+    override void updateMyMove (Board newEnemyBoard)
     {
-        return finishPrepareMove (board);
-    }
-    return false;
-}
-
-
-
-
-bool wins (Board board)
-{
-  for (int row = 0; row < ROWS; row++)
-    {
-        for (int col = 0; col < COLS; col++)
-        {
-            if (board.ships[row][col] == 'O' && board.hits[row][col] == '.')
-                return false;
-        }
+        enemyBoard = newEnemyBoard;
     }
 
 
-    return true;
 }
