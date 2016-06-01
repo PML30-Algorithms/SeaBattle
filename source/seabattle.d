@@ -778,8 +778,8 @@ void main_loop (string [] args)
     {
         foreach (i; 0..1000)
         {
-            Player humanPlayer = new ArtemIntelligence ();
-            Player newPlayer = new AI0 ();
+            Player humanPlayer = new HumanPlayer ();
+            Player newPlayer = new NewSuperPlayer ();
             Server server = new Server ();
             server.play ([humanPlayer, newPlayer]);
         }
